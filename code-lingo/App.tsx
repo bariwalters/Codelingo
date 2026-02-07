@@ -1,25 +1,3 @@
-// import { StatusBar } from 'expo-status-bar';
-// import { StyleSheet, Text, View } from 'react-native';
-
-// export default function App() {
-//   return (
-//     <View style={styles.container}>
-//       <Text>Open up App.tsx to start working on your app!</Text>
-//       <StatusBar style="auto" />
-//     </View>
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     backgroundColor: '#fff',
-//     alignItems: 'center',
-//     justifyContent: 'center',
-//   },
-// });
-
-
 import { useEffect, useState } from "react";
 import { StyleSheet, Text, View, TextInput, Pressable, Alert } from "react-native";
 import { StatusBar } from "expo-status-bar";
@@ -27,7 +5,9 @@ import { onAuthStateChanged, User } from "firebase/auth";
 
 import { signUpWithEmail, loginWithEmail, logout } from "./src/firebase/auth";
 import { auth } from "./src/firebase/firebase";
-import { getUserProfile } from "./src/firebase/db";
+//import { getUserProfile } from "./src/firebase/db";
+import { enrollLanguage, setLanguages, applyLessonCompletion, getUserProfile } from "./src/firebase/db";
+
 
 export default function App() {
   const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
@@ -111,6 +91,62 @@ export default function App() {
     Alert.alert("Current user", `UID: ${auth.currentUser.uid}\nEmail: ${auth.currentUser.email}`);
   }
 
+  //test
+  async function refreshProfile() {
+  if (!auth.currentUser) return;
+  const profile = await getUserProfile(auth.currentUser.uid);
+  setUserInfo(profile);
+}
+
+async function handleEnrollJava() {
+  try {
+    if (!auth.currentUser) throw new Error("Not logged in");
+    await enrollLanguage(auth.currentUser.uid, "java");
+    await refreshProfile();
+    Alert.alert("Success", "Enrolled in Java + created progress/java doc");
+  } catch (err: any) {
+    console.log("Enroll Java error:", err);
+    Alert.alert("Enroll Java error", err?.message ?? String(err));
+  }
+}
+
+async function handleSwitchToJava() {
+  try {
+    if (!auth.currentUser) throw new Error("Not logged in");
+
+    // Switch current language to java (must be enrolled)
+    await setLanguages(auth.currentUser.uid, ["python", "java"], "java");
+
+    await refreshProfile();
+    Alert.alert("Success", "Switched currentLanguage to java");
+  } catch (err: any) {
+    console.log("Switch language error:", err);
+    Alert.alert("Switch language error", err?.message ?? String(err));
+  }
+}
+
+async function handleCompletePythonLesson1() {
+  try {
+    if (!auth.currentUser) throw new Error("Not logged in");
+
+    await applyLessonCompletion({
+      uid: auth.currentUser.uid,
+      language: "python",
+      lessonId: "python_lesson_1",
+      xpGained: 5,
+      nextLessonIndex: 1,
+      score: 5,
+    });
+
+    await refreshProfile();
+    Alert.alert("Success", "Completed python_lesson_1 (XP/streak/progress updated)");
+  } catch (err: any) {
+    console.log("Complete lesson error:", err);
+    Alert.alert("Complete lesson error", err?.message ?? String(err));
+  }
+}
+//test
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>🔥 Firebase Auth Test</Text>
@@ -167,6 +203,21 @@ export default function App() {
           <Pressable style={styles.buttonSecondary} onPress={handleLogout}>
             <Text style={styles.buttonText}>Log Out</Text>
           </Pressable>
+
+          //test buttons
+          <Pressable style={styles.button} onPress={handleEnrollJava}>
+            <Text style={styles.buttonText}>Enroll Java (creates progress/java)</Text>
+          </Pressable>
+
+          <Pressable style={styles.buttonSecondary} onPress={handleSwitchToJava}>
+            <Text style={styles.buttonText}>Switch Current Language → Java</Text>
+          </Pressable>
+
+          <Pressable style={styles.button} onPress={handleCompletePythonLesson1}>
+            <Text style={styles.buttonText}>Complete Python Lesson 1 (test)</Text>
+          </Pressable>
+
+
         </>
       )}
 
