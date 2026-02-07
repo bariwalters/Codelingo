@@ -8,9 +8,10 @@ interface NavProps {
   onTabPress: (tab: string) => void;
 }
 
-export const BottomNavbar = ({ activeTab, onTabPress }: NavProps) => {
+export const BottomNavBar = ({ activeTab, onTabPress }: NavProps) => {
   return (
     <View style={styles.navContainer}>
+      {/* HOME TAB */}
       <TouchableOpacity onPress={() => onTabPress('home')} style={styles.navItem}>
         <Ionicons 
           name={activeTab === 'home' ? "home" : "home-outline"} 
@@ -19,14 +20,25 @@ export const BottomNavbar = ({ activeTab, onTabPress }: NavProps) => {
         />
       </TouchableOpacity>
      
-      <TouchableOpacity style={styles.navItem}>
-        <Ionicons name="cube-outline" size={32} color={theme.colors.teal} />
+      {/* QUESTS TAB (The Chest) */}
+      <TouchableOpacity onPress={() => onTabPress('quests')} style={styles.navItem}>
+        <Ionicons 
+          name={activeTab === 'quests' ? "briefcase" : "briefcase-outline"} 
+          size={32} 
+          color={activeTab === 'quests' ? theme.colors.white : theme.colors.teal} 
+        />
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.navItem}>
-        <Ionicons name="trophy-outline" size={32} color={theme.colors.teal} />
+      {/* LEADERBOARD TAB (The Trophy) */}
+      <TouchableOpacity onPress={() => onTabPress('leaderboard')} style={styles.navItem}>
+        <Ionicons 
+          name={activeTab === 'leaderboard' ? "trophy" : "trophy-outline"} 
+          size={32} 
+          color={activeTab === 'leaderboard' ? theme.colors.white : theme.colors.teal} 
+        />
       </TouchableOpacity>
 
+      {/* ACCOUNT TAB */}
       <TouchableOpacity onPress={() => onTabPress('account')} style={styles.navItem}>
         <Ionicons 
           name={activeTab === 'account' ? "person" : "person-outline"} 
@@ -43,9 +55,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
-    backgroundColor: '#3C4D5E', // Lara's specific navy variant
-    paddingVertical: 20,
-    paddingBottom: 35, 
+    backgroundColor: '#3C4D5E', // Match Lara's Navy variant
+    paddingVertical: 15,
+    paddingBottom: 35, // Safe area for modern phones
     borderTopWidth: 1,
     borderTopColor: 'rgba(255,255,255,0.1)',
     position: 'absolute',
@@ -55,5 +67,7 @@ const styles = StyleSheet.create({
   },
   navItem: {
     padding: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
   }
 });
