@@ -1,19 +1,40 @@
+import React, { useEffect, useState } from "react";
+import { View, ActivityIndicator, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import { Text, View, ActivityIndicator } from 'react-native';
 import { useFonts, NovaMono_400Regular } from '@expo-google-fonts/nova-mono';
+import { onAuthStateChanged, User } from "firebase/auth";
 
-// Import your new global styles and theme
+import { auth } from "../src/firebase/firebase";
+import { logout } from "../src/firebase/auth";
+import { getUserProfile } from "../src/firebase/db";
+import { UserProfile } from "../src/firebase/types";
+
+import LoginScreen from '../app/login'; 
+import SignUpScreen from '../app/signup'; 
 import { globalStyles } from '../src/theme/globalStyles';
 import { theme } from '../src/theme/theme';
 
 export default function App() {
-  // Load the font from Google Fonts
-  let [fontsLoaded] = useFonts({
-    'NovaMono': NovaMono_400Regular,
-  });
+  const [user, setUser] = useState<User | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isLoginView, setIsLoginView] = useState(true);
 
-  // Show a loading spinner while the font is downloading
-  if (!fontsLoaded) {
+  let [fontsLoaded] = useFonts({ 'NovaMono': NovaMono_400Regular });
+
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
+      setUser(firebaseUser);
+      if (firebaseUser) {
+        const profile = await getUserProfile(firebaseUser.uid);
+        setUserProfile(profile);
+      }
+      setLoading(false);
+    });
+    return () => unsub();
+  }, []);
+
+  if (!fontsLoaded || loading) {
     return (
       <View style={[globalStyles.screenContainer, globalStyles.centered]}>
         <ActivityIndicator size="large" color={theme.colors.navy} />
@@ -21,14 +42,22 @@ export default function App() {
     );
   }
 
+  // If not logged in, show Login or Signup based on isLoginView state
+  if (!user) {
+    return isLoginView ? (
+      <LoginScreen onNavigate={() => setIsLoginView(false)} />
+    ) : (
+      <SignUpScreen onNavigate={() => setIsLoginView(true)} />
+    );
+  }
+
+  // Dashboard View (Logged In)
   return (
-    <View style={globalStyles.screenContainer}>
-      <View style={globalStyles.centered}>
-        <Text style={globalStyles.heading}>Codelingo</Text>
-        <Text style={globalStyles.baseText}>
-          Now using NovaMono and your custom palette!
-        </Text>
-      </View>
+    <View style={[globalStyles.screenContainer, globalStyles.centered]}>
+      <Text style={globalStyles.heading}>hello, {userProfile?.username || 'coder'}!</Text>
+      <TouchableOpacity style={globalStyles.authButton} onPress={() => logout()}>
+        <Text style={globalStyles.buttonText}>log out</Text>
+      </TouchableOpacity>
       <StatusBar style="auto" />
     </View>
   );
