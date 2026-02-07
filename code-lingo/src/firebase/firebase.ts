@@ -6,14 +6,6 @@ import { getFirestore } from "firebase/firestore";
 // https://firebase.google.com/docs/web/setup#available-libraries
 
 // Your web app's Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyDE40ubAPUZ0tC-7b857Lsu48xEXnxF_VI",
-  authDomain: "codelingo-6b86f.firebaseapp.com",
-  projectId: "codelingo-6b86f",
-  storageBucket: "codelingo-6b86f.firebasestorage.app",
-  messagingSenderId: "906215105223",
-  appId: "1:906215105223:web:5b7d33a9dabbee3655d4e2"
-};
 
 const firebaseConfig = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY!,
