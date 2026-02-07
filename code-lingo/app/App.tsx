@@ -47,6 +47,5 @@ export default function App() {
       : <SignUpScreen onNavigate={() => setIsLoginView(true)} />;
   }
 
-  // Pass userProfile to the main app shell
   return <MainShell userProfile={userProfile} />;
 }
