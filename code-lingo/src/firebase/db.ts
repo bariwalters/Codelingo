@@ -10,6 +10,7 @@ import {
   arrayUnion,
 } from "firebase/firestore";
 import type { UserProfile, LanguageId, LanguageProgress } from "./types";
+import { initialWindowMetrics } from "react-native-safe-area-context";
 
 
 // Utilities
@@ -50,11 +51,12 @@ export async function createUserProfile(params: {
   uid: string;
   username: string;
   email: string;
+  initialLanguage: LanguageId;
 }) {
-  const { uid, username, email } = params;
+  const { uid, username, email, initialLanguage } = params;
 
-  const defaultLanguages: LanguageId[] = ["python"];
-  const defaultCurrent: LanguageId = "python";
+  const defaultLanguages: LanguageId[] = [initialLanguage];
+  const defaultCurrent: LanguageId = initialLanguage;
 
   const profile: Omit<UserProfile, "createdAt" | "updatedAt"> & {
     createdAt: any;

@@ -2,17 +2,21 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { globalStyles } from '../src/theme/globalStyles';
 import { signUpWithEmail } from '../src/firebase/auth';
+import { Picker } from "@react-native-picker/picker";
+import type { LanguageId } from "../src/firebase/types";
+
 
 export default function SignUpScreen({ onNavigate }: { onNavigate: () => void }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
+  const [selectedLanguage, setSelectedLanguage] = useState<LanguageId>("python");
   const [loading, setLoading] = useState(false);
 
   const handleSignUp = async () => {
     setLoading(true);
     try {
-      await signUpWithEmail({ email, password, username });
+      await signUpWithEmail({ email, password, username, initialLanguage: selectedLanguage });
     } catch (err: any) {
       Alert.alert("Sign Up Error", err.message);
     } finally {
@@ -39,6 +43,33 @@ export default function SignUpScreen({ onNavigate }: { onNavigate: () => void })
           <Text style={globalStyles.inputLabel}>first name</Text>
           <TextInput style={globalStyles.inputField} value={username} onChangeText={setUsername} />
         </View>
+
+
+
+        <View style={globalStyles.inputGroup}>
+          <Text style={globalStyles.inputLabel}>starting language</Text>
+
+          <View style={{
+            width: "100%",
+            borderRadius: 10,
+            overflow: "hidden",
+            borderWidth: 2,
+            borderColor: "#2F4156",
+            backgroundColor: "#fff"
+          }}>
+            <Picker
+              selectedValue={selectedLanguage}
+              onValueChange={(v) => setSelectedLanguage(v as LanguageId)}
+            >
+              <Picker.Item label="Python" value="python" />
+              <Picker.Item label="Java" value="java" />
+              <Picker.Item label="JavaScript" value="javascript" />
+              <Picker.Item label="C++" value="cpp" />
+              <Picker.Item label="SQL" value="sql" />
+            </Picker>
+          </View>
+        </View>
+
 
         <View style={globalStyles.inputGroup}>
           <Text style={globalStyles.inputLabel}>password</Text>
