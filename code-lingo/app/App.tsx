@@ -1,18 +1,18 @@
 import { StatusBar } from 'expo-status-bar';
-import { Text, View, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator } from 'react-native';
 import { useFonts, NovaMono_400Regular } from '@expo-google-fonts/nova-mono';
 
-// Import your new global styles and theme
+// 1. Import the LoginScreen component
+import LoginScreen from '../app/login'; 
+
 import { globalStyles } from '../src/theme/globalStyles';
 import { theme } from '../src/theme/theme';
 
 export default function App() {
-  // Load the font from Google Fonts
   let [fontsLoaded] = useFonts({
     'NovaMono': NovaMono_400Regular,
   });
 
-  // Show a loading spinner while the font is downloading
   if (!fontsLoaded) {
     return (
       <View style={[globalStyles.screenContainer, globalStyles.centered]}>
@@ -21,15 +21,11 @@ export default function App() {
     );
   }
 
+  // 2. Return the LoginScreen instead of the placeholder text
   return (
-    <View style={globalStyles.screenContainer}>
-      <View style={globalStyles.centered}>
-        <Text style={globalStyles.heading}>Codelingo</Text>
-        <Text style={globalStyles.baseText}>
-          Now using NovaMono and your custom palette!
-        </Text>
-      </View>
+    <>
+      <LoginScreen />
       <StatusBar style="auto" />
-    </View>
+    </>
   );
 }
