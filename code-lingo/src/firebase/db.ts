@@ -1,0 +1,139 @@
+// src/firebase/db.ts
+import { db } from "./firebase";
+import {
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  serverTimestamp,
+  increment,
+} from "firebase/firestore";
+import type { UserProfile, LanguageId } from "./types";
+
+// Utilities
+export function todayString(): string {
+  // local date -> YYYY-MM-DD
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+export function isYesterday(lastDate: string, today: string): boolean {
+  // lastDate and today are YYYY-MM-DD
+  const [y1, m1, d1] = lastDate.split("-").map(Number);
+  const [y2, m2, d2] = today.split("-").map(Number);
+
+  const a = new Date(y1, m1 - 1, d1);
+  const b = new Date(y2, m2 - 1, d2);
+
+  const diffMs = b.getTime() - a.getTime();
+  const oneDay = 24 * 60 * 60 * 1000;
+  return diffMs >= oneDay && diffMs < 2 * oneDay;
+}
+
+// Firestore paths
+export function userDoc(uid: string) {
+  return doc(db, "users", uid);
+}
+
+// Create user profile once (on sign up)
+export async function createUserProfile(params: {
+  uid: string;
+  username: string;
+  email: string;
+}) {
+  const { uid, username, email } = params;
+
+  const defaultLanguages: LanguageId[] = ["python"]; // start simple
+  const defaultCurrent: LanguageId = "python";
+
+  const profile: Omit<UserProfile, "createdAt" | "updatedAt"> & {
+    createdAt: any;
+    updatedAt: any;
+  } = {
+    uid,
+    username,
+    email,
+
+    enrolledLanguages: defaultLanguages,
+    currentLanguage: defaultCurrent,
+
+    xp: 0,
+    streak: 0,
+    lastActiveDate: "",
+
+    avatarId: "coach_ada",
+    voiceId: "",
+
+    currentLessonByLanguage: {
+      python: 0,
+      java: 0,
+      javascript: 0,
+      cpp: 0,
+      sql: 0,
+    },
+
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  };
+
+  await setDoc(userDoc(uid), profile, { merge: false });
+}
+
+// Read profile
+export async function getUserProfile(uid: string) {
+  const snap = await getDoc(userDoc(uid));
+  return snap.exists() ? (snap.data() as UserProfile) : null;
+}
+
+// Update avatar selection
+export async function updateAvatar(uid: string, avatarId: string, voiceId: string) {
+  await updateDoc(userDoc(uid), {
+    avatarId,
+    voiceId,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+// Enroll languages or switch current
+export async function setLanguages(uid: string, enrolledLanguages: LanguageId[], currentLanguage: LanguageId) {
+  await updateDoc(userDoc(uid), {
+    enrolledLanguages,
+    currentLanguage,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+// Called after lesson completion
+export async function applyLessonCompletion(params: {
+  uid: string;
+  language: LanguageId;
+  xpGained: number;
+  nextLessonIndex: number;
+}) {
+  const { uid, language, xpGained, nextLessonIndex } = params;
+
+  const profile = await getUserProfile(uid);
+  const today = todayString();
+
+  let newStreak = 1;
+  if (profile?.lastActiveDate) {
+    if (profile.lastActiveDate === today) {
+      newStreak = profile.streak; // already active today
+    } else if (isYesterday(profile.lastActiveDate, today)) {
+      newStreak = profile.streak + 1;
+    } else {
+      newStreak = 1;
+    }
+  }
+
+  await updateDoc(userDoc(uid), {
+    xp: increment(xpGained),
+    streak: newStreak,
+    lastActiveDate: today,
+    [`currentLessonByLanguage.${language}`]: nextLessonIndex,
+    updatedAt: serverTimestamp(),
+  });
+}
