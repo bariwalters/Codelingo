@@ -7,8 +7,10 @@ import {
   updateDoc,
   serverTimestamp,
   increment,
+  arrayUnion,
 } from "firebase/firestore";
-import type { UserProfile, LanguageId } from "./types";
+import type { UserProfile, LanguageId, LanguageProgress } from "./types";
+
 
 // Utilities
 export function todayString(): string {
@@ -38,6 +40,11 @@ export function userDoc(uid: string) {
   return doc(db, "users", uid);
 }
 
+export function progressDoc(uid: string, languageId: LanguageId) {
+  return doc(db, "users", uid, "progress", languageId);
+}
+
+
 // Create user profile once (on sign up)
 export async function createUserProfile(params: {
   uid: string;
@@ -46,7 +53,7 @@ export async function createUserProfile(params: {
 }) {
   const { uid, username, email } = params;
 
-  const defaultLanguages: LanguageId[] = ["python"]; // start simple
+  const defaultLanguages: LanguageId[] = ["python"];
   const defaultCurrent: LanguageId = "python";
 
   const profile: Omit<UserProfile, "createdAt" | "updatedAt"> & {
@@ -79,8 +86,21 @@ export async function createUserProfile(params: {
     updatedAt: serverTimestamp(),
   };
 
+  // 1) Create user doc
   await setDoc(userDoc(uid), profile, { merge: false });
+
+  // 2) Create initial progress doc for default language
+  const progress: LanguageProgress = {
+    languageId: defaultCurrent,
+    currentLessonIndex: 0,
+    completedLessons: [],
+    lessonHistory: [],
+    updatedAt: serverTimestamp(),
+  };
+
+  await setDoc(progressDoc(uid, defaultCurrent), progress, { merge: false });
 }
+
 
 // Read profile
 export async function getUserProfile(uid: string) {
@@ -106,34 +126,68 @@ export async function setLanguages(uid: string, enrolledLanguages: LanguageId[],
   });
 }
 
+export async function enrollLanguage(uid: string, languageId: LanguageId) {
+  // 1) Add to enrolledLanguages array
+  await updateDoc(userDoc(uid), {
+    enrolledLanguages: arrayUnion(languageId),
+    updatedAt: serverTimestamp(),
+  });
+
+  // 2) Create progress doc if it doesn't exist
+  const snap = await getDoc(progressDoc(uid, languageId));
+  if (!snap.exists()) {
+    const progress: LanguageProgress = {
+      languageId,
+      currentLessonIndex: 0,
+      completedLessons: [],
+      lessonHistory: [],
+      updatedAt: serverTimestamp(),
+    };
+    await setDoc(progressDoc(uid, languageId), progress, { merge: false });
+  }
+}
+
+
 // Called after lesson completion
 export async function applyLessonCompletion(params: {
   uid: string;
   language: LanguageId;
   xpGained: number;
   nextLessonIndex: number;
+  lessonId: string;     // <-- add
+  score?: number;       // optional
 }) {
-  const { uid, language, xpGained, nextLessonIndex } = params;
+  const { uid, language, xpGained, nextLessonIndex, lessonId, score = 5 } = params;
 
   const profile = await getUserProfile(uid);
   const today = todayString();
 
   let newStreak = 1;
   if (profile?.lastActiveDate) {
-    if (profile.lastActiveDate === today) {
-      newStreak = profile.streak; // already active today
-    } else if (isYesterday(profile.lastActiveDate, today)) {
-      newStreak = profile.streak + 1;
-    } else {
-      newStreak = 1;
-    }
+    if (profile.lastActiveDate === today) newStreak = profile.streak;
+    else if (isYesterday(profile.lastActiveDate, today)) newStreak = profile.streak + 1;
+    else newStreak = 1;
   }
 
+  // 1) Update totals on user doc
   await updateDoc(userDoc(uid), {
     xp: increment(xpGained),
     streak: newStreak,
     lastActiveDate: today,
     [`currentLessonByLanguage.${language}`]: nextLessonIndex,
+    updatedAt: serverTimestamp(),
+  });
+
+  // 2) Update progress doc
+  await updateDoc(progressDoc(uid, language), {
+    currentLessonIndex: nextLessonIndex,
+    completedLessons: arrayUnion(lessonId),
+    lessonHistory: arrayUnion({
+      lessonId,
+      score,
+      xpGained,
+      completedAt: serverTimestamp(),
+    }),
     updatedAt: serverTimestamp(),
   });
 }

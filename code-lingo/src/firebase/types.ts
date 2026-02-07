@@ -22,3 +22,20 @@ export type UserProfile = {
   createdAt: any; // Firestore serverTimestamp
   updatedAt: any; // Firestore serverTimestamp
 };
+
+
+export type LessonHistoryItem = {
+  lessonId: string;
+  score: number;      // out of 5
+  xpGained: number;
+  completedAt: any;   // Firestore timestamp
+};
+
+export type LanguageProgress = {
+  languageId: LanguageId;
+  currentLessonIndex: number;
+  completedLessons: string[];
+  lessonHistory: LessonHistoryItem[];
+  updatedAt: any;
+};
+
