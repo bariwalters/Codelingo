@@ -1,23 +1,16 @@
 import React, { useState } from 'react';
 import { View, StyleSheet } from 'react-native';
-
-// Components
 import { BottomNavBar } from './components/BottomNavBar';
 import { LandingHeader } from './components/LandingHeader';
 import { LessonPath } from './components/LessonPath';
-
-// Screens
 import AccountScreen from '../app/account';
 import QuestsScreen from '../app/quests';
 import LeaderboardScreen from '../app/leaderboard';
-
-// Theme
 import { theme } from './theme/theme';
 
 export default function MainShell({ userProfile }: { userProfile: any }) {
   const [currentTab, setCurrentTab] = useState('home');
 
-  // Placeholder data for the LessonPath
   const dummyLessons = [
     { id: '1', order: 1 }, 
     { id: '2', order: 2 }, 
@@ -25,7 +18,6 @@ export default function MainShell({ userProfile }: { userProfile: any }) {
     { id: '4', order: 4 }, 
     { id: '5', order: 5 }
   ];
-
 
   const renderContent = () => {
     switch (currentTab) {
@@ -54,9 +46,6 @@ export default function MainShell({ userProfile }: { userProfile: any }) {
 
   return (
     <View style={styles.container}>
-      {/* The LandingHeader (Language/Streak) only shows on the 
-        Home tab to keep the UI clean on other pages. 
-      */}
       {currentTab === 'home' && (
         <LandingHeader 
           language={userProfile?.currentLanguage || 'python'} 
@@ -64,12 +53,10 @@ export default function MainShell({ userProfile }: { userProfile: any }) {
         />
       )}
 
-      {/* Main Content Area */}
       <View style={styles.contentArea}>
         {renderContent()}
       </View>
 
-      {/* Lara's Custom Bottom Navigation */}
       <BottomNavBar 
         activeTab={currentTab} 
         onTabPress={(tab: string) => setCurrentTab(tab)} 

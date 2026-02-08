@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../src/theme/theme';
+import LottieView from 'lottie-react-native';
 
 const ProgressBar = ({ current, total }: { current: number, total: number }) => (
   <View style={styles.progressTrack}>
@@ -18,7 +19,12 @@ export default function QuestsScreen({ userProfile }: any) {
           <Text style={styles.mainTitle}>Quests</Text>
           <Text style={styles.subtitle}>Complete quests to earn rewards!</Text>
         </View>
-        <Ionicons name="paw" size={80} color={theme.colors.navy} /> 
+        <LottieView
+            source={require('../assets/animations/cat_mascot.json')}
+            autoPlay
+            loop
+            style={{ width: 120, height: 120 }}
+        />
       </View>
 
       <View style={styles.body}>

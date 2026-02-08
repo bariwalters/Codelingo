@@ -59,7 +59,7 @@ export default function SignUpScreen({ onNavigate }: { onNavigate: () => void })
               selectedValue={selectedLanguage}
               onValueChange={(v) => setSelectedLanguage(v as LanguageId)}
               dropdownIconColor="#2F4156"
-              mode="dropdown"
+              mode="dropdown" // Better for Android "feel"
               style={{ 
                 width: '100%',
                 color: '#2F4156', 

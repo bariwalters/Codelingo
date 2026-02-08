@@ -12,8 +12,10 @@ import SignUpScreen from '../app/signup';
 import MainShell from '../src/MainShell';
 import { theme } from '../src/theme/theme';
 import { globalStyles } from '../src/theme/globalStyles';
+import SplashScreen from '../app/splash';
 
 export default function App() {
+  const [showSplash, setShowSplash] = useState(true);
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -39,6 +41,10 @@ export default function App() {
         <ActivityIndicator size="large" color={theme.colors.navy} />
       </View>
     );
+  }
+
+  if (showSplash) {
+    return <SplashScreen onFinish={() => setShowSplash(false)} />;
   }
 
   if (!user) {
