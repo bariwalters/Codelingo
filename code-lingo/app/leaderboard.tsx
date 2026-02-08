@@ -6,8 +6,6 @@ import { theme } from '../src/theme/theme';
 import { globalStyles } from '../src/theme/globalStyles';
 import { Ionicons } from '@expo/vector-icons';
 
-// --- CACHE OUTSIDE THE COMPONENT ---
-// This stays in memory even when the tab is switched!
 let cachedData: any[] = [];
 
 export default function LeaderboardScreen() {

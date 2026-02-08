@@ -1,45 +1,55 @@
 import React from 'react';
-import { ScrollView, StyleSheet, View, Text } from 'react-native';
+import { ScrollView, StyleSheet, View, Text, Image } from 'react-native';
 import { LessonNode } from './LessonNode';
 import { UnitCard } from './UnitCard';
-import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../theme/theme';
-
+import { theme } from '../theme/theme'; // Ensure this path is correct
 
 interface LessonPathProps {
   lessons: { id: string; order: number }[];
   currentLessonIndex: number;
+
+  // UI bits used in the JSX below
+  languageName: string;
+  totalXp: number;
+
+  // navigation callback (so tapping a node opens lesson.tsx)
   onStartLesson: (idx: number) => void;
 }
 
-export const LessonPath = ({ lessons, currentLessonIndex, onStartLesson }: LessonPathProps) => {
+export const LessonPath = ({
+  lessons,
+  currentLessonIndex,
+  languageName,
+  totalXp,
+  onStartLesson,
+}: LessonPathProps) => {
   return (
     <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-      <UnitCard />
-      <View style={styles.pathWrapper}>
-        {lessons.map((lesson: any, index: number) => {
-          const zigzag = [0, 50, 0, -50];
-          const offset = zigzag[index % 4];
-          const isActive = index === currentLessonIndex;
-          
-          return (
-            <View key={lesson.id} style={styles.row}>
-              {/* The Cat Mascot & XP - Only renders next to the active lesson */}
-              {isActive && (
-                <View style={[styles.mascotContainer, { left: offset - 90 }]}>
-                   <Ionicons name="logo-github" size={60} color="#000" /> 
-                   <Text style={styles.xpText}>150 XP</Text>
-                </View>
-              )}
+      <UnitCard title={`${languageName} syntax`} />
 
+      <View style={styles.pathWrapper}>
+        {/* The Cat & XP Badge */}
+        <View style={styles.catPositioner}>
+          <Image
+            source={require('../../assets/cat-avatar.png')}
+            style={styles.mascotImage}
+          />
+          <Text style={styles.xpText}>{totalXp} XP</Text>
+        </View>
+
+        {lessons.map((lesson, index) => {
+          const zigzag = [100, 140, 100, 60];
+          const offset = zigzag[index % 4];
+
+          return (
+            <View key={lesson.id} style={[styles.row, { marginLeft: offset }]}>
               <LessonNode
-                key={lesson.id}
                 index={index}
                 offset={offset}
                 isActive={index === currentLessonIndex}
                 isCompleted={index < currentLessonIndex}
                 onPress={(i) => onStartLesson(i)}
-/>
+              />
             </View>
           );
         })}
@@ -51,27 +61,34 @@ export const LessonPath = ({ lessons, currentLessonIndex, onStartLesson }: Lesso
 const styles = StyleSheet.create({
   container: {
     paddingBottom: 120,
+    backgroundColor: '#DDE8F0', // Matching your light blue background
   },
   pathWrapper: {
-    alignItems: 'center',
-    marginTop: 30,
-  },
-  row: {
+    marginTop: 40,
     width: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
+    minHeight: 600,
   },
-  mascotContainer: {
+  catPositioner: {
     position: 'absolute',
+    left: 40, // Keeps it on the left side of the path
+    top: 100,
     alignItems: 'center',
     zIndex: 10,
   },
+  mascotImage: {
+    width: 85,
+    height: 85,
+    resizeMode: 'contain',
+  },
   xpText: {
-    fontFamily: theme.fonts.main,
-    fontSize: 18,
+    fontFamily: 'Courier', // Matches the "hand-drawn" terminal look
+    fontSize: 22,
     fontWeight: 'bold',
-    color: theme.colors.navy,
-    marginTop: -5,
-    transform: [{ rotate: '-10deg' }]
-  }
+    color: '#333',
+    transform: [{ rotate: '-10deg' }],
+    marginTop: -10,
+  },
+  row: {
+    marginVertical: 25,
+  },
 });
