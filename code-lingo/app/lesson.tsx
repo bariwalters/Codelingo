@@ -40,8 +40,8 @@ export default function LessonScreen({
   const [successSound, setSuccessSound] = useState<Audio.Sound | null>(null);
 
   // --- LOGIC ---
-  const nextQuestion = useCallback(async (forcedType?: QuestionType) => {
-    if (currentStep >= TOTAL_STEPS) return;
+  const nextQuestion = useCallback(async (step: number, forcedType?: QuestionType) => {
+    if (step >= TOTAL_STEPS) return;
     const type: QuestionType = forcedType ?? (Math.random() < 0.5 ? "fill_blank" : "arrange");
     try {
       setError(null);
@@ -61,9 +61,8 @@ export default function LessonScreen({
     } finally {
       setLoadingQuestion(false);
     }
-  }, [currentStep, currentLanguage, parsedLessonIndex]);
+  }, [currentLanguage, parsedLessonIndex]);
 
-  // Rename this to playCorrectSound as requested
   const playCorrectSound = async () => {
     if (successSound) {
       try {
@@ -85,8 +84,6 @@ export default function LessonScreen({
           const user = auth.currentUser;
           if (user) {
             const userRef = doc(db, "users", user.uid);
-            
-            // This targets the exact path in your DB: currentLessonByLanguage.python
             await updateDoc(userRef, {
               [`currentLessonByLanguage.${currentLanguage}`]: parsedLessonIndex + 1,
               xp: increment(15),
@@ -102,7 +99,7 @@ export default function LessonScreen({
         ]);
       } else {
         setCurrentStep(nextStep);
-        nextQuestion();
+        nextQuestion(nextStep);
       }
     } else {
       setArrangeResult(null);
@@ -112,9 +109,8 @@ export default function LessonScreen({
     }
   };
 
-  // Load question and Sound Asset on mount
   useEffect(() => {
-    nextQuestion();
+    nextQuestion(0);
 
     async function loadSound() {
       try {
@@ -123,15 +119,13 @@ export default function LessonScreen({
         );
         setSuccessSound(sound);
       } catch (e) {
-        console.log("Could not load correct.mp3 - check file path");
+        console.log("Could not load correct.mp3");
       }
     }
     loadSound();
 
     return () => {
-      if (successSound) {
-        successSound.unloadAsync();
-      }
+      if (successSound) successSound.unloadAsync();
     };
   }, []); 
 
@@ -245,16 +239,16 @@ export default function LessonScreen({
                (question.questionType === "fill_blank" && !selectedChoice)) && styles.disabledButton
             ]}
             onPress={() => {
+              let isCorrect = false;
               if (question.questionType === "arrange") {
-                const isCorrect = arranged.length === correct.length &&
+                isCorrect = arranged.length === correct.length &&
                   arranged.every((val, i) => norm(val) === norm(correct[i]));
                 setArrangeResult(isCorrect ? "correct" : "incorrect");
-                if (isCorrect) playCorrectSound();
               } else {
-                const isCorrect = selectedChoice === question.blanks?.[0]?.answer;
+                isCorrect = selectedChoice === question.blanks?.[0]?.answer;
                 setResult(isCorrect ? "correct" : "incorrect");
-                if (isCorrect) playCorrectSound();
               }
+              if (isCorrect) playCorrectSound();
             }}
           >
             <Text style={styles.checkButtonText}>CHECK</Text>
@@ -264,7 +258,7 @@ export default function LessonScreen({
         {(arrangeResult || result) && (
            <View style={[styles.feedbackPopup, (arrangeResult === "incorrect" || result === "incorrect") && styles.feedbackPopupError]}>
               <Text style={[styles.feedbackText, (arrangeResult === "incorrect" || result === "incorrect") && { color: '#dc2626' }]}>
-                {(arrangeResult === "correct" || result === "correct") ? "✅ Perfect!" : "❌ Not quite right"}
+                {(arrangeResult === "correct" || result === "correct") ? "Perfect!" : "Not quite right"}
               </Text>
               {(arrangeResult === "incorrect" || result === "incorrect") && (
                 <Text style={styles.explanationText}>Hint: {question.explanation}</Text>
@@ -274,7 +268,7 @@ export default function LessonScreen({
                 style={[styles.nextBtn, (arrangeResult === "incorrect" || result === "incorrect") && { backgroundColor: '#dc2626' }]}
               >
                 {loadingQuestion ? <ActivityIndicator color="white" /> : (
-                  <Text style={{color: 'white', fontWeight: '900'}}>
+                  <Text style={styles.nextBtnText}>
                     {currentStep === TOTAL_STEPS - 1 && (arrangeResult === "correct" || result === "correct") ? "FINISH" : "CONTINUE"}
                   </Text>
                 )}
@@ -317,12 +311,13 @@ const styles = StyleSheet.create({
   footer: { width: '100%', height: 70, justifyContent: 'center' },
   checkButton: { backgroundColor: '#2F4156', height: 55, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
   disabledButton: { opacity: 0.4 },
-  checkButtonText: { color: 'white', fontSize: 18, fontWeight: '900', letterSpacing: 2 },
+  checkButtonText: { color: 'white', fontSize: 18, fontWeight: '900', letterSpacing: 2, fontFamily: 'Courier' },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#DDE8F0' },
   loadingText: { marginTop: 15, fontFamily: 'Courier', fontSize: 16, color: '#2F4156' },
   feedbackPopup: { position: 'absolute', bottom: -40, left: -20, right: -20, backgroundColor: '#DCFCE7', padding: 25, paddingBottom: 60, borderTopLeftRadius: 30, borderTopRightRadius: 30, alignItems: 'center', zIndex: 100, shadowColor: '#000', shadowOffset: { width: 0, height: -3 }, shadowOpacity: 0.1, shadowRadius: 5, elevation: 10 },
   feedbackPopupError: { backgroundColor: '#FEE2E2' },
-  feedbackText: { fontSize: 20, fontWeight: '900', color: '#166534', marginBottom: 5 },
+  feedbackText: { fontSize: 20, fontWeight: '900', color: '#166534', marginBottom: 5, fontFamily: 'Courier' },
   explanationText: { color: '#444', marginBottom: 10, textAlign: 'center', fontFamily: 'Courier', fontSize: 13 },
-  nextBtn: { backgroundColor: '#166534', paddingHorizontal: 40, paddingVertical: 10, borderRadius: 12, minWidth: 150, alignItems: 'center' }
+  nextBtn: { backgroundColor: '#166534', paddingHorizontal: 40, paddingVertical: 10, borderRadius: 12, minWidth: 150, alignItems: 'center' },
+  nextBtnText: { color: 'white', fontWeight: '900', fontFamily: 'Courier', fontSize: 16 }
 });
