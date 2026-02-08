@@ -6,10 +6,6 @@ import { generateSpeech } from "../src/services/voiceServices";
 import { Audio } from 'expo-av';
 import { Ionicons } from '@expo/vector-icons';
 
-// Firebase Imports
-import { db, auth } from "../src/firebase/config"; 
-import { doc, updateDoc, increment } from "firebase/firestore";
-
 const norm = (s: string) => s.replace(/\s+/g, "").replace(/[“”]/g, '"').replace(/[‘’]/g, "'").trim();
 
 export default function LessonScreen({
@@ -62,38 +58,24 @@ export default function LessonScreen({
     }
   }, [currentStep, currentLanguage, parsedLessonIndex]);
 
-  const handleContinue = async () => {
+  const handleContinue = () => {
+    // If we're already loading the next question, ignore extra taps
     if (loadingQuestion) return;
 
     const isCorrect = arrangeResult === "correct" || result === "correct";
 
     if (isCorrect) {
       const nextStep = currentStep + 1;
-      
       if (nextStep >= TOTAL_STEPS) {
-        // --- LESSON COMPLETION LOGIC ---
-        try {
-          const user = auth.currentUser;
-          if (user) {
-            const userRef = doc(db, "users", user.uid);
-            // Increment the level in Firestore so the home screen updates
-            await updateDoc(userRef, {
-              currentLevel: increment(1)
-            });
-          }
-        } catch (e) {
-          console.error("Error updating user level:", e);
-        }
-
-        Alert.alert("Lesson Complete!", `Level ${parsedLessonIndex} Cleared! Moving to Level ${parsedLessonIndex + 1}.`, [
+        Alert.alert("Lesson Complete!", "Level 1 Cleared! Moving to Level 2.", [
           { text: "Awesome", onPress: onExit }
         ]);
       } else {
         setCurrentStep(nextStep);
+        // This triggers the background fetch without clearing the current question UI
         nextQuestion();
       }
     } else {
-      // If incorrect, reset the current interaction for a retry
       setArrangeResult(null);
       setResult(null);
       setArrangedIdxs([]);
@@ -115,6 +97,8 @@ export default function LessonScreen({
     } catch (e) { console.error("Voice Error:", e); }
   }
 
+  // Changed: Only return the full-screen loader if there is NO question loaded yet.
+  // Once the first question is in state, this block is skipped even during background loads.
   if (!question) {
     return (
       <View style={styles.centered}>
@@ -245,6 +229,7 @@ export default function LessonScreen({
                 onPress={handleContinue} 
                 style={[styles.nextBtn, (arrangeResult === "incorrect" || result === "incorrect") && { backgroundColor: '#dc2626' }]}
               >
+                {/* Shows a spinner inside the button while loading the next question */}
                 {loadingQuestion ? (
                   <ActivityIndicator color="white" />
                 ) : (
