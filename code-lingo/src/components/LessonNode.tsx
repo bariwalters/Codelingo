@@ -2,21 +2,30 @@ import React from 'react';
 import { TouchableOpacity, StyleSheet, View, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../theme/theme';
+import { useRouter } from 'expo-router';
+
 
 interface LessonNodeProps {
   offset: number;
   isActive?: boolean;
   isCompleted?: boolean;
   index: number; // Added index for numbering
+  onPress?: (index: number) => void;
+
 }
 
-export const LessonNode = ({ offset, isActive, isCompleted, index }: LessonNodeProps) => {
+export const LessonNode = ({ offset, isActive, isCompleted, index, onPress }: LessonNodeProps) => {
+  const router = useRouter();
+
   return (
     <View style={[styles.nodeContainer, { transform: [{ translateX: offset }] }]}>
       {/* Dashed Ring now centered behind the circle */}
       {isActive && <View style={styles.dashedRing} />}
       
       <TouchableOpacity
+
+        onPress={() => onPress?.(index)}
+
         style={[
           styles.nodeCircle,
           {
