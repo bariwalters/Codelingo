@@ -24,6 +24,15 @@ export async function generateQuestionGemini(params: {
   const modelName = "gemini-2.5-flash"; 
 
   const prompt = `
+
+    IMPORTANT:
+    - Use ONLY the specified language: ${params.language}
+    - If language is "python": use Python syntax, indentation, print()
+    - If language is "java": use Java syntax, class + main method
+    - If language is "javascript": use JavaScript syntax, console.log()
+    - Never mix languages.
+
+
     You generate ONE beginner-friendly coding question.
 
     Return STRICT JSON ONLY (no markdown, no extra text).
