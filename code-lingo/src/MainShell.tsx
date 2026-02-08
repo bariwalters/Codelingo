@@ -18,30 +18,59 @@ const ALL_LANGUAGES = [
   { id: 'java', label: 'Java' },
 ];
 
-export default function MainShell({ userProfile }: { userProfile: any }) {
+export default function MainShell({ userProfile: initialProfile }: { userProfile: any }) {
   const [currentTab, setCurrentTab] = useState('home');
   const [isAddingLanguage, setIsAddingLanguage] = useState(false);
-  const [activeLang, setActiveLang] = useState(userProfile?.currentLanguage || 'python');
+  
+  // Create a LOCAL copy of the profile so we can update the UI instantly
+  const [userProfile, setUserProfile] = useState(initialProfile);
+  const [activeLang, setActiveLang] = useState(initialProfile?.currentLanguage || 'python');
 
+  // Keep local state in sync if the parent/Firebase sends a new profile
   useEffect(() => {
-    if (userProfile?.currentLanguage) {
-      setActiveLang(userProfile.currentLanguage);
+    setUserProfile(initialProfile);
+    if (initialProfile?.currentLanguage) {
+      setActiveLang(initialProfile.currentLanguage);
     }
-  }, [userProfile?.currentLanguage]);
+  }, [initialProfile]);
 
-  // Only show languages the user hasn't joined yet
   const availableToEnroll = ALL_LANGUAGES.filter(
     lang => !userProfile?.enrolledLanguages?.includes(lang.id)
   );
 
-  const handleLanguageSelect = async (newLang: string) => {
-    setActiveLang(newLang);
+  const handleLanguageSelect = async (langId: string) => {
+    setActiveLang(langId);
     try {
       if (userProfile?.uid) {
-        await userService.switchCurrentLanguage(userProfile.uid, newLang as any);
+        await userService.switchCurrentLanguage(userProfile.uid, langId as any);
       }
     } catch (error) {
-      console.error("Error switching:", error);
+      console.error("Selection switch failed:", error);
+    }
+  };
+
+  const handleEnrollNewLanguage = async (langId: string) => {
+    if (!userProfile?.uid) return;
+
+    // --- THE FIX: INSTANT UI UPDATE ---
+    const updatedEnrolled = [...(userProfile.enrolledLanguages || []), langId];
+    
+    // Update local state so the dropdown and path update BEFORE the network call finishes
+    setUserProfile({
+      ...userProfile,
+      enrolledLanguages: updatedEnrolled,
+      currentLanguage: langId
+    });
+    setActiveLang(langId);
+    setIsAddingLanguage(false);
+
+    try {
+      // Update Firebase in the background
+      await userService.enrollLanguage(userProfile.uid, langId as any);
+      await userService.switchCurrentLanguage(userProfile.uid, langId as any);
+    } catch (error) {
+      console.error("Enrollment failed:", error);
+      // Optional: Revert state if the database call fails
     }
   };
 
@@ -54,11 +83,7 @@ export default function MainShell({ userProfile }: { userProfile: any }) {
             <TouchableOpacity 
               key={lang.id} 
               style={styles.langButton} 
-              onPress={async () => {
-                await userService.enrollLanguage(userProfile.uid, lang.id as any);
-                handleLanguageSelect(lang.id);
-                setIsAddingLanguage(false);
-              }}
+              onPress={() => handleEnrollNewLanguage(lang.id)}
             >
               <Text style={styles.langButtonText}>{lang.label}</Text>
             </TouchableOpacity>
@@ -70,14 +95,14 @@ export default function MainShell({ userProfile }: { userProfile: any }) {
       );
     }
 
-    const langDisplay = activeLang === 'cpp' ? 'c++' : activeLang === 'csharp' ? 'c#' : activeLang;
+    const langLabel = ALL_LANGUAGES.find(l => l.id === activeLang)?.label.toLowerCase() || activeLang;
 
     switch (currentTab) {
       case 'home':
         return (
           <LessonPath 
             lessons={[{ id: '1' }, { id: '2' }, { id: '3' }, { id: '4' }, { id: '5' }]} 
-            languageName={langDisplay} 
+            languageName={langLabel} 
             totalXp={userProfile?.totalXp || 0}
             currentLessonIndex={userProfile?.currentLessonByLanguage?.[activeLang] || 0} 
           />
@@ -111,11 +136,11 @@ export default function MainShell({ userProfile }: { userProfile: any }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#DDE8F0' }, // Matches light blue bg in Figma
+  container: { flex: 1, backgroundColor: '#DDE8F0' },
   contentArea: { flex: 1 },
   addLanguageContainer: { padding: 40, alignItems: 'center', backgroundColor: '#2D3E50', flexGrow: 1, justifyContent: 'center' },
   title: { fontFamily: 'Courier', fontSize: 24, color: 'white', marginBottom: 30, fontWeight: 'bold' },
-  langButton: { backgroundColor: theme.colors.white, padding: 18, borderRadius: 15, width: '100%', alignItems: 'center', marginBottom: 15 },
+  langButton: { backgroundColor: 'white', padding: 18, borderRadius: 15, width: '100%', alignItems: 'center', marginBottom: 15 },
   langButtonText: { fontFamily: 'Courier', color: '#2D3E50', fontSize: 18, fontWeight: 'bold' },
   cancelLink: { color: 'white', fontFamily: 'Courier', marginTop: 20, textDecorationLine: 'underline' }
 });

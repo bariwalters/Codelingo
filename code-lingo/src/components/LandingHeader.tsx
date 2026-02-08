@@ -2,19 +2,18 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-export const LandingHeader = ({ language, streak, enrolledLanguages, onLanguageSelect, onAddLanguage }: any) => {
+export const LandingHeader = ({ language, streak, enrolledLanguages = [], onLanguageSelect, onAddLanguage }: any) => {
   const [isMenuVisible, setIsMenuVisible] = useState(false);
 
   const getShort = (id: string) => {
-    switch(id.toLowerCase()){
-        case 'python': return 'Py';
-        case 'javascript': return 'JS';
-        case 'typescript': return 'TS';
-        case 'cpp': return 'C++';
-        case 'java': return 'Jv';
-        case 'csharp': return 'C#';
-        default: return '??';
-    }
+    const code = id?.toLowerCase();
+    if (code === 'python') return 'Py';
+    if (code === 'javascript') return 'JS';
+    if (code === 'typescript') return 'TS';
+    if (code === 'cpp') return 'C++';
+    if (code === 'java') return 'Jv';
+    if (code === 'csharp') return 'C#';
+    return '??';
   };
 
   return (
@@ -29,12 +28,16 @@ export const LandingHeader = ({ language, streak, enrolledLanguages, onLanguageS
           <View style={styles.dropdownMenu}>
             <View style={styles.arrowUp} />
             <View style={styles.menuContent}>
-              {enrolledLanguages.map((lang: string) => (
-                <TouchableOpacity key={lang} style={styles.menuItem} onPress={() => { onLanguageSelect(lang); setIsMenuVisible(false); }}>
-                  <View style={[styles.langIcon, language === lang && styles.activeLang]}>
-                    <Text style={styles.langIconText}>{getShort(lang)}</Text>
+              {enrolledLanguages.map((langId: string) => (
+                <TouchableOpacity 
+                  key={langId} 
+                  style={styles.menuItem} 
+                  onPress={() => { onLanguageSelect(langId); setIsMenuVisible(false); }}
+                >
+                  <View style={[styles.langIcon, language.toLowerCase() === langId.toLowerCase() && styles.activeLang]}>
+                    <Text style={styles.langIconText}>{getShort(langId)}</Text>
                   </View>
-                  <Text style={styles.langLabel}>{lang}</Text>
+                  <Text style={styles.langLabel}>{langId}</Text>
                 </TouchableOpacity>
               ))}
               <TouchableOpacity style={styles.menuItem} onPress={() => { setIsMenuVisible(false); setTimeout(onAddLanguage, 300); }}>
