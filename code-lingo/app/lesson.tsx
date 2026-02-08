@@ -1,10 +1,14 @@
-import { useEffect, useState } from "react";
-import { View, Text, Pressable, StyleSheet, Image, SafeAreaView, ActivityIndicator } from "react-native";
+import { useEffect, useState, useCallback } from "react";
+import { View, Text, Pressable, StyleSheet, Image, SafeAreaView, ActivityIndicator, Alert } from "react-native";
 import type { GeneratedQuestion, QuestionType, LanguageId } from "../src/firebase/types";
 import { generateQuestionGemini } from "../src/ai/gemini";
 import { generateSpeech } from "../src/services/voiceServices";
 import { Audio } from 'expo-av';
 import { Ionicons } from '@expo/vector-icons';
+
+// Firebase Imports
+import { db, auth } from "../src/firebase/config"; 
+import { doc, updateDoc, increment } from "firebase/firestore";
 
 const norm = (s: string) => s.replace(/\s+/g, "").replace(/[“”]/g, '"').replace(/[‘’]/g, "'").trim();
 
@@ -20,6 +24,10 @@ export default function LessonScreen({
   const parsedLessonIndex = Number(lessonIndex);
   const currentLanguage = language;
 
+  // --- PROGRESSION STATES ---
+  const [currentStep, setCurrentStep] = useState(0);
+  const TOTAL_STEPS = 5;
+
   const [question, setQuestion] = useState<Omit<GeneratedQuestion, "id" | "createdAt"> | null>(null);
   const [arrangedIdxs, setArrangedIdxs] = useState<number[]>([]);
   const [arrangeResult, setArrangeResult] = useState<"correct" | "incorrect" | null>(null);
@@ -28,22 +36,19 @@ export default function LessonScreen({
   const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
   const [result, setResult] = useState<"correct" | "incorrect" | null>(null);
 
-  async function nextQuestion(forcedType?: QuestionType) {
+  // --- LOGIC ---
+  const nextQuestion = useCallback(async (forcedType?: QuestionType) => {
+    if (currentStep >= TOTAL_STEPS) return;
+
     const type: QuestionType = forcedType ?? (Math.random() < 0.5 ? "fill_blank" : "arrange");
     try {
       setError(null);
-      setLoadingQuestion(true);
+      setLoadingQuestion(true); 
       const q = await generateQuestionGemini({
         language: currentLanguage,
         lessonIndex: parsedLessonIndex,
         questionType: type,
       });
-
-      if (q.questionType === "fill_blank") {
-        if (!q.codeSnippet || !Array.isArray(q.blanks) || q.blanks.length === 0) throw new Error("Invalid fill_blank");
-      } else if (q.questionType === "arrange") {
-        if (!Array.isArray(q.blocks) || q.blocks.length < 2) throw new Error("Invalid arrange");
-      }
 
       setQuestion(q);
       setArrangedIdxs([]);
@@ -55,7 +60,50 @@ export default function LessonScreen({
     } finally {
       setLoadingQuestion(false);
     }
-  }
+  }, [currentStep, currentLanguage, parsedLessonIndex]);
+
+  const handleContinue = async () => {
+    if (loadingQuestion) return;
+
+    const isCorrect = arrangeResult === "correct" || result === "correct";
+
+    if (isCorrect) {
+      const nextStep = currentStep + 1;
+      
+      if (nextStep >= TOTAL_STEPS) {
+        // --- LESSON COMPLETION LOGIC ---
+        try {
+          const user = auth.currentUser;
+          if (user) {
+            const userRef = doc(db, "users", user.uid);
+            // Increment the level in Firestore so the home screen updates
+            await updateDoc(userRef, {
+              currentLevel: increment(1)
+            });
+          }
+        } catch (e) {
+          console.error("Error updating user level:", e);
+        }
+
+        Alert.alert("Lesson Complete!", `Level ${parsedLessonIndex} Cleared! Moving to Level ${parsedLessonIndex + 1}.`, [
+          { text: "Awesome", onPress: onExit }
+        ]);
+      } else {
+        setCurrentStep(nextStep);
+        nextQuestion();
+      }
+    } else {
+      // If incorrect, reset the current interaction for a retry
+      setArrangeResult(null);
+      setResult(null);
+      setArrangedIdxs([]);
+      setSelectedChoice(null);
+    }
+  };
+
+  useEffect(() => {
+    nextQuestion();
+  }, []); 
 
   async function handleSpeak(text: string) {
     try {
@@ -66,8 +114,6 @@ export default function LessonScreen({
       });
     } catch (e) { console.error("Voice Error:", e); }
   }
-
-  useEffect(() => { nextQuestion(); }, [parsedLessonIndex, currentLanguage]);
 
   if (!question) {
     return (
@@ -83,6 +129,8 @@ export default function LessonScreen({
   const correct = question.correctOrder ?? [];
   const arranged = arrangedIdxs.map((idx) => blocks[idx]);
 
+  const progressPercent = (currentStep / TOTAL_STEPS) * 100;
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.headerContainer}>
@@ -90,13 +138,12 @@ export default function LessonScreen({
           <Ionicons name="close" size={32} color="white" />
         </Pressable>
         <View style={styles.progressTrack}>
-          <View style={[styles.progressBar, { width: '45%' }]} />
+          <View style={[styles.progressBar, { width: `${progressPercent}%` }]} />
         </View>
         <View style={styles.headerRight}><Ionicons name="book-outline" size={26} color="white" /></View>
       </View>
       
       <View style={styles.content}>
-        {/* Top Section: Now pushed down by paddingTop */}
         <View style={styles.topSection}>
           <Text style={styles.instructionText}>
             {question.questionType === "arrange" ? "Arrange the code blocks" : "Fill in the blank"}
@@ -111,7 +158,6 @@ export default function LessonScreen({
           </View>
         </View>
 
-        {/* Middle Section */}
         <View style={styles.mainWorkArea}>
           {question.questionType === "arrange" ? (
             <View style={{ width: '100%' }}>
@@ -164,7 +210,6 @@ export default function LessonScreen({
           )}
         </View>
 
-        {/* Bottom Section */}
         <View style={styles.footer}>
           <Pressable
             style={[
@@ -195,8 +240,18 @@ export default function LessonScreen({
               {(arrangeResult === "incorrect" || result === "incorrect") && (
                 <Text style={styles.explanationText}>Hint: {question.explanation}</Text>
               )}
-              <Pressable onPress={() => nextQuestion()} style={[styles.nextBtn, (arrangeResult === "incorrect" || result === "incorrect") && { backgroundColor: '#dc2626' }]}>
-                <Text style={{color: 'white', fontWeight: '900'}}>CONTINUE</Text>
+              
+              <Pressable 
+                onPress={handleContinue} 
+                style={[styles.nextBtn, (arrangeResult === "incorrect" || result === "incorrect") && { backgroundColor: '#dc2626' }]}
+              >
+                {loadingQuestion ? (
+                  <ActivityIndicator color="white" />
+                ) : (
+                  <Text style={{color: 'white', fontWeight: '900'}}>
+                    {currentStep === TOTAL_STEPS - 1 && (arrangeResult === "correct" || result === "correct") ? "FINISH" : "CONTINUE"}
+                  </Text>
+                )}
               </Pressable>
            </View>
         )}
@@ -208,41 +263,18 @@ export default function LessonScreen({
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#DDE8F0' },
   headerContainer: { height: 60, backgroundColor: '#2F4156', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 15, marginHorizontal: 15, borderRadius: 22, marginTop: 10 },
-  
-  // Re-added these two to fix the TypeScript errors
   closeButton: { padding: 5 },
   headerRight: { padding: 5 },
-
-  progressTrack: { flex: 1, height: 10, backgroundColor: '#40566E', borderRadius: 10, marginHorizontal: 15 },
+  progressTrack: { flex: 1, height: 12, backgroundColor: '#40566E', borderRadius: 10, marginHorizontal: 15, overflow: 'hidden' },
   progressBar: { height: '100%', backgroundColor: '#DDE8F0', borderRadius: 10 },
-  
-  content: { 
-    flex: 1, 
-    paddingHorizontal: 20, 
-    paddingBottom: 10 
-  },
-  
-  // This moves the "Arrange" text, the cat, and the bubble lower
-  topSection: { 
-    width: '100%', 
-    marginTop: 50, // Increase this to 70 or 80 if you want it even lower
-    marginBottom: 20 
-  },
-  
+  content: { flex: 1, paddingHorizontal: 20, paddingBottom: 10 },
+  topSection: { width: '100%', marginTop: 50, marginBottom: 20 },
   instructionText: { fontSize: 18, fontFamily: 'Courier', fontWeight: 'bold', color: '#333', marginBottom: 10 },
   mascotRow: { flexDirection: 'row', alignItems: 'center', width: '100%' },
   mascotImage: { width: 60, height: 70, resizeMode: 'contain' },
   speechBubble: { flex: 1, backgroundColor: '#F9F9F9', borderWidth: 2, borderColor: '#2F4156', borderRadius: 18, padding: 10, marginLeft: 10, flexDirection: 'row', alignItems: 'center', minHeight: 60 },
   speechText: { fontSize: 14, fontFamily: 'Courier', color: '#2F4156', flex: 1, fontWeight: '600' },
-
-  // Keeps the work area tucked under the cat instead of floating in the center
-  mainWorkArea: { 
-    flex: 1, 
-    justifyContent: 'flex-start', 
-    alignItems: 'center',
-    paddingTop: 20 
-  },
-
+  mainWorkArea: { flex: 1, justifyContent: 'flex-start', alignItems: 'center', paddingTop: 20 },
   answerSection: { height: 120, position: 'relative', width: '100%' },
   linesContainer: { width: '100%', position: 'absolute', top: 0, bottom: 0 },
   underline: { height: 2, backgroundColor: '#2F4156', width: '100%', marginTop: 38 },
@@ -262,29 +294,9 @@ const styles = StyleSheet.create({
   checkButtonText: { color: 'white', fontSize: 18, fontWeight: '900', letterSpacing: 2 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#DDE8F0' },
   loadingText: { marginTop: 15, fontFamily: 'Courier', fontSize: 16, color: '#2F4156' },
-feedbackPopup: { 
-    position: 'absolute', 
-    // Push it further down to account for safe area and padding
-    bottom: -40, 
-    left: -20, 
-    right: -20, 
-    backgroundColor: '#DCFCE7', 
-    padding: 25, 
-    // Increase bottom padding so content doesn't get cut off by the home bar
-    paddingBottom: 60, 
-    borderTopLeftRadius: 30, 
-    borderTopRightRadius: 30, 
-    alignItems: 'center', 
-    zIndex: 100,
-    // Add elevation/shadow to make it look layered
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 10,
-  },
+  feedbackPopup: { position: 'absolute', bottom: -40, left: -20, right: -20, backgroundColor: '#DCFCE7', padding: 25, paddingBottom: 60, borderTopLeftRadius: 30, borderTopRightRadius: 30, alignItems: 'center', zIndex: 100, shadowColor: '#000', shadowOffset: { width: 0, height: -3 }, shadowOpacity: 0.1, shadowRadius: 5, elevation: 10 },
   feedbackPopupError: { backgroundColor: '#FEE2E2' },
   feedbackText: { fontSize: 20, fontWeight: '900', color: '#166534', marginBottom: 5 },
   explanationText: { color: '#444', marginBottom: 10, textAlign: 'center', fontFamily: 'Courier', fontSize: 13 },
-  nextBtn: { backgroundColor: '#166534', paddingHorizontal: 40, paddingVertical: 10, borderRadius: 12 }
+  nextBtn: { backgroundColor: '#166534', paddingHorizontal: 40, paddingVertical: 10, borderRadius: 12, minWidth: 150, alignItems: 'center' }
 });
