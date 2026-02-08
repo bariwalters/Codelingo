@@ -76,7 +76,7 @@ export default function AccountScreen({ userProfile }: any) {
             </View>
             <View style={styles.overviewItem}>
                 <MaterialCommunityIcons name="lightning-bolt" size={26} color="#ecc94b" />
-                <Text style={styles.overviewValue}>{userProfile?.xp || 10} xp</Text>
+                <Text style={styles.overviewValue}>{userProfile?.xp || 0} xp</Text>
             </View>
         </View>
 
@@ -101,7 +101,6 @@ export default function AccountScreen({ userProfile }: any) {
           <Text style={styles.logoutText}>log out</Text>
         </TouchableOpacity>
 
-        {/* EXTRA SPACE PADDER: Matches the blue background to fix the white gap */}
         <View style={{ height: 125 }} />
       </View>
     </ScrollView>
@@ -115,7 +114,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    // Removed paddingBottom from here!
   },
   topNav: {
     flexDirection: 'row',
