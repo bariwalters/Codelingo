@@ -1,16 +1,22 @@
 import { useState } from "react";
 import { View, Text, Pressable } from "react-native";
-import { useLocalSearchParams } from 'expo-router';
 import type { GeneratedQuestion, QuestionType, LanguageId } from "../src/firebase/types";
 import { generateQuestionGemini } from "../src/ai/gemini";
 
-export default function LessonScreen(props: { onExit: () => void }) {
-  const { onExit } = props;
-  const { lessonIndex } = useLocalSearchParams<{ lessonIndex: string }>();
-  const parsedLessonIndex = Number(lessonIndex ?? 0);
+export default function LessonScreen({
+  lessonIndex,
+  language,
+  onExit,
+}: {
+  lessonIndex: number;
+  language: LanguageId; // ✅ use proper type
+  onExit: () => void;
+}) {
+  // ✅ lessonIndex is already a number passed from MainShell
+  const parsedLessonIndex = Number(lessonIndex);
 
-
-  const [language] = useState<LanguageId>("python");
+  // ✅ DO NOT redeclare language with useState
+  const currentLanguage = language;
 
   const [question, setQuestion] = useState<
     Omit<GeneratedQuestion, "id" | "createdAt"> | null
@@ -19,36 +25,35 @@ export default function LessonScreen(props: { onExit: () => void }) {
   const [arranged, setArranged] = useState<string[]>([]);
   const [arrangeResult, setArrangeResult] = useState<"correct" | "incorrect" | null>(null);
 
+  const [loadingQuestion, setLoadingQuestion] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
+  const [result, setResult] = useState<"correct" | "incorrect" | null>(null);
 
+  async function nextQuestion(type: QuestionType) {
+    try {
+      setError(null);
+      setLoadingQuestion(true);
 
-const [loadingQuestion, setLoadingQuestion] = useState(false);
-const [error, setError] = useState<string | null>(null);
-const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
-const [result, setResult] = useState<"correct" | "incorrect" | null>(null);
+      console.log("Generating question:", { currentLanguage, parsedLessonIndex, type });
 
+      const q = await generateQuestionGemini({
+        language: currentLanguage,
+        lessonIndex: parsedLessonIndex,
+        questionType: type,
+      });
 
-async function nextQuestion(type: QuestionType) {
-  try {
-    setError(null);
-    setLoadingQuestion(true);
-
-    console.log("Generating question:", { language, lessonIndex, type });
-
-    const q = await generateQuestionGemini({
-      language,
-      lessonIndex: parsedLessonIndex,
-      questionType: type,
-    });
-
-    console.log("Generated question:", q);
-    setQuestion(q);
-  } catch (e: any) {
-    console.log("Gemini generation error:", e);
-    setError(e?.message ?? String(e));
-  } finally {
-    setLoadingQuestion(false);
+      setQuestion(q);
+    } catch (e: any) {
+      console.log("Gemini generation error:", e);
+      setError(e?.message ?? String(e));
+    } finally {
+      setLoadingQuestion(false);
+    }
   }
-}
+
+  // ... keep the rest of your UI the same
+
 
 
 
