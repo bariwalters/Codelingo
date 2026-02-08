@@ -12,7 +12,7 @@ const ProgressBar = ({ current, total }: { current: number, total: number }) => 
 );
 
 export default function QuestsScreen({ userProfile }: any) {
-  const xp = userProfile?.xp || 0; // Linked to DB 'xp' field
+  const xp = userProfile?.xp || 0; 
   const lessonsDone = userProfile?.lessonsCompletedCount || 0;
 
   return (
@@ -26,7 +26,7 @@ export default function QuestsScreen({ userProfile }: any) {
             source={require('../assets/animations/cat_mascot.json')}
             autoPlay
             loop
-            style={{ width: 120, height: 120 }}
+            style={{ width: 140, height: 140 }}
         />
       </View>
 
