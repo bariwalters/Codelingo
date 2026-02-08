@@ -3,6 +3,7 @@ import { View, Text, Pressable } from "react-native";
 import type { GeneratedQuestion, QuestionType, LanguageId } from "../src/firebase/types";
 import { generateQuestionGemini } from "../src/ai/gemini";
 import { generateSpeech } from "../src/services/voiceServices";
+import { Audio } from 'expo-av';
 
 const norm = (s: string) => s.replace(/\s+/g, "").replace(/[“”]/g, '"').replace(/[‘’]/g, "'").trim();
 
@@ -74,10 +75,21 @@ export default function LessonScreen({
 
   async function handleSpeak(text: string) {
     try {
-      console.log("Speaking text:", text);
-      const audioUrl = await generateSpeech(text);
-      const audio = new Audio(audioUrl);
-      await audio.play();
+      console.log("Generating voice for mobile/web...");
+      const audioDataUri = await generateSpeech(text);
+
+      // Play using expo-av instead of 'new Audio'
+      const { sound } = await Audio.Sound.createAsync(
+        { uri: audioDataUri },
+        { shouldPlay: true }
+      );
+
+      // Automatically unload sound from memory when finished
+      sound.setOnPlaybackStatusUpdate(async (status) => {
+        if (status.isLoaded && status.didJustFinish) {
+          await sound.unloadAsync();
+        }
+      });
     } catch (e) {
       console.error("Voice Error:", e);
     }
