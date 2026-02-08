@@ -37,7 +37,8 @@ export default function LessonScreen({
   const [result, setResult] = useState<"correct" | "incorrect" | null>(null);
 
   const nextQuestion = useCallback(async (forcedType?: QuestionType) => {
-    if (currentStep >= TOTAL_STEPS) return;
+    if (currentStep >= TOTAL_STEPS || loadingQuestion) return; // Prevent double-triggering 429 errors
+    
     const type: QuestionType = forcedType ?? (Math.random() < 0.5 ? "fill_blank" : "arrange");
     try {
       setError(null);
@@ -53,11 +54,15 @@ export default function LessonScreen({
       setSelectedChoice(null);
       setResult(null);
     } catch (e: any) {
-      setError(e?.message ?? String(e));
+      if (e?.message?.includes("429")) {
+        setError("AI is busy (Rate Limit). Please wait a moment...");
+      } else {
+        setError(e?.message ?? String(e));
+      }
     } finally {
       setLoadingQuestion(false);
     }
-  }, [currentStep, currentLanguage, parsedLessonIndex]);
+  }, [currentStep, currentLanguage, parsedLessonIndex, loadingQuestion]);
 
   const handleContinue = async () => {
     if (loadingQuestion) return;
@@ -71,10 +76,10 @@ export default function LessonScreen({
           if (user) {
             const userRef = doc(db, "users", user.uid);
             
-            // This targets the exact path in your DB: currentLessonByLanguage.python
             await updateDoc(userRef, {
               [`currentLessonByLanguage.${currentLanguage}`]: parsedLessonIndex + 1,
               xp: increment(15),
+              lessonsCompletedCount: increment(1), // Fixes the Quests meter
               updatedAt: serverTimestamp(),
             });
           }
@@ -109,6 +114,18 @@ export default function LessonScreen({
         if (status.isLoaded && status.didJustFinish) await sound.unloadAsync();
       });
     } catch (e) { console.error("Voice Error:", e); }
+  }
+
+  if (error) {
+    return (
+      <View style={styles.centered}>
+        <Ionicons name="alert-circle" size={50} color="#dc2626" />
+        <Text style={[styles.loadingText, { color: '#dc2626' }]}>{error}</Text>
+        <Pressable onPress={() => nextQuestion()} style={styles.nextBtn}>
+          <Text style={{color: 'white'}}>Retry</Text>
+        </Pressable>
+      </View>
+    );
   }
 
   if (!question) {
@@ -283,10 +300,10 @@ const styles = StyleSheet.create({
   disabledButton: { opacity: 0.4 },
   checkButtonText: { color: 'white', fontSize: 18, fontWeight: '900', letterSpacing: 2 },
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#DDE8F0' },
-  loadingText: { marginTop: 15, fontFamily: 'Courier', fontSize: 16, color: '#2F4156' },
+  loadingText: { marginTop: 15, fontFamily: 'Courier', fontSize: 16, color: '#2F4156', textAlign: 'center', paddingHorizontal: 20 },
   feedbackPopup: { position: 'absolute', bottom: -40, left: -20, right: -20, backgroundColor: '#DCFCE7', padding: 25, paddingBottom: 60, borderTopLeftRadius: 30, borderTopRightRadius: 30, alignItems: 'center', zIndex: 100, shadowColor: '#000', shadowOffset: { width: 0, height: -3 }, shadowOpacity: 0.1, shadowRadius: 5, elevation: 10 },
   feedbackPopupError: { backgroundColor: '#FEE2E2' },
   feedbackText: { fontSize: 20, fontWeight: '900', color: '#166534', marginBottom: 5 },
   explanationText: { color: '#444', marginBottom: 10, textAlign: 'center', fontFamily: 'Courier', fontSize: 13 },
-  nextBtn: { backgroundColor: '#166534', paddingHorizontal: 40, paddingVertical: 10, borderRadius: 12, minWidth: 150, alignItems: 'center' }
+  nextBtn: { backgroundColor: '#166534', paddingHorizontal: 40, paddingVertical: 10, borderRadius: 12, minWidth: 150, alignItems: 'center', marginTop: 10 }
 });
