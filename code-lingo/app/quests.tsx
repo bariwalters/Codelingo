@@ -1,17 +1,20 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../src/theme/theme';
 import LottieView from 'lottie-react-native';
 
 const ProgressBar = ({ current, total }: { current: number, total: number }) => (
   <View style={styles.progressTrack}>
-    <View style={[styles.progressFill, { width: `${(current / total) * 100}%` }]} />
+    <View style={[styles.progressFill, { width: `${Math.min((current / total) * 100, 100)}%` }]} />
     <Text style={styles.progressText}>{current}/{total}</Text>
   </View>
 );
 
 export default function QuestsScreen({ userProfile }: any) {
+  const xp = userProfile?.xp || 0; // Linked to DB 'xp' field
+  const lessonsDone = userProfile?.lessonsCompletedCount || 0;
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 100 }}>
       <View style={styles.headerCard}>
@@ -37,8 +40,8 @@ export default function QuestsScreen({ userProfile }: any) {
         </View>
         <View style={styles.weekendCard} />
 
-        <Text style={styles.questTaskText}>complete 3 perfect lessons</Text>
-        <ProgressBar current={0} total={3} />
+        <Text style={styles.questTaskText}>complete 3 lessons</Text>
+        <ProgressBar current={lessonsDone % 3} total={3} />
 
         <View style={styles.divider} />
 
@@ -52,18 +55,28 @@ export default function QuestsScreen({ userProfile }: any) {
 
         <View style={styles.dailyRow}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.questTaskText}>earn 10 xp</Text>
-            <ProgressBar current={userProfile?.xp || 0} total={10} />
+            <Text style={styles.questTaskText}>earn 50 xp</Text>
+            <ProgressBar current={Math.min(xp, 50)} total={50} />
           </View>
-          <Ionicons name="gift" size={40} color="#8BA1B0" style={styles.chestIcon} />
+          <Ionicons 
+            name="gift" 
+            size={40} 
+            color={xp >= 50 ? theme.colors.teal : "#8BA1B0"} 
+            style={styles.chestIcon} 
+          />
         </View>
 
         <View style={styles.dailyRow}>
           <View style={{ flex: 1 }}>
             <Text style={styles.questTaskText}>complete 2 lessons</Text>
-            <ProgressBar current={0} total={2} />
+            <ProgressBar current={Math.min(lessonsDone, 2)} total={2} />
           </View>
-          <Ionicons name="gift" size={40} color="#8BA1B0" style={styles.chestIcon} />
+          <Ionicons 
+            name="gift" 
+            size={40} 
+            color={lessonsDone >= 2 ? theme.colors.teal : "#8BA1B0"} 
+            style={styles.chestIcon} 
+          />
         </View>
       </View>
     </ScrollView>

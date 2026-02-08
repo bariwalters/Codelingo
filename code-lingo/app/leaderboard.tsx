@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, ActivityIndicator, StyleSheet, StatusBar } from 'react-native';
+import { View, Text, FlatList, ActivityIndicator, StyleSheet, StatusBar, Image } from 'react-native';
 import { collection, query, orderBy, getDocs, limit } from 'firebase/firestore';
 import { db } from '../src/firebase/firebase';
 import { theme } from '../src/theme/theme';
 import { globalStyles } from '../src/theme/globalStyles';
 import { Ionicons } from '@expo/vector-icons';
+import LottieView from 'lottie-react-native';
+
+const CAT_ANIMATION = require('../assets/animations/cat_mascot.json');
 
 let cachedData: any[] = [];
 
@@ -19,7 +22,7 @@ export default function LeaderboardScreen() {
         const snap = await getDocs(q);
         const list = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         
-        cachedData = list; // Update the cache
+        cachedData = list;
         setUsers(list);
       } catch (err) {
         console.error("Leaderboard fetch error:", err);
@@ -31,7 +34,6 @@ export default function LeaderboardScreen() {
     fetchLeaderboard();
   }, []);
 
-  // Show spinner ONLY if we have no cache and are loading for the first time
   if (loading && users.length === 0) {
     return (
       <View style={[globalStyles.centered, { flex: 1, backgroundColor: 'white' }]}>
@@ -43,20 +45,53 @@ export default function LeaderboardScreen() {
   const topThree = users.slice(0, 3);
   const others = users.slice(3);
 
-  const renderPodium = (user: any, rank: number) => (
-    <View style={styles.podiumUser}>
-      <View style={[styles.avatarCircle, { borderColor: rank === 1 ? '#FFD700' : '#E5E5E5' }]}>
-        <Ionicons name="person" size={rank === 1 ? 40 : 30} color={theme.colors.teal} />
+  const getRankColor = (rank: number) => {
+    if (rank === 1) return '#FFD700';
+    if (rank === 2) return '#A9BCC9';
+    if (rank === 3) return '#CD7F32';
+    return '#E5E5E5';
+  };
+
+  const renderPodium = (user: any, rank: number) => {
+    const rankColor = getRankColor(rank);
+    const overlayColor = rankColor + '44'; 
+    
+    return (
+      <View style={styles.podiumUser}>
+        <View style={[styles.avatarCircle, { borderColor: rankColor, borderWidth: 3 }]}>
+          {user?.avatarUrl ? (
+            // If user has a real photo, show it
+            <Image 
+              source={{ uri: user.avatarUrl }} 
+              style={styles.catImage}
+            />
+          ) : (
+            // Otherwise, show the animated mascot
+            <LottieView
+              source={CAT_ANIMATION}
+              autoPlay
+              loop
+              style={styles.catImage}
+            />
+          )}
+          
+          {/* THE OVERLAY: Tints the avatar/animation based on rank */}
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: overlayColor, pointerEvents: 'none' }]} />
+        </View>
+        
+        <Text style={styles.podiumName} numberOfLines={1}>
+          {user?.username || '---'}
+        </Text>
+
+        <View style={[styles.podiumBlock, { 
+          backgroundColor: rankColor,
+          height: rank === 1 ? 85 : rank === 2 ? 65 : 55 
+        }]}>
+          <Text style={styles.podiumNumber}>{rank}</Text>
+        </View>
       </View>
-      <Text style={styles.podiumName}>{user?.username || '---'}</Text>
-      <View style={[styles.podiumBlock, { 
-        backgroundColor: rank === 1 ? '#FFD700' : rank === 2 ? '#A9BCC9' : '#CD7F32',
-        height: rank === 1 ? 85 : rank === 2 ? 65 : 55 
-      }]}>
-        <Text style={styles.podiumNumber}>{rank}</Text>
-      </View>
-    </View>
-  );
+    );
+  };
 
   return (
     <View style={styles.fullScreen}>
@@ -91,14 +126,14 @@ export default function LeaderboardScreen() {
 const styles = StyleSheet.create({
   fullScreen: {
     flex: 1,
-    backgroundColor: theme.colors.background, // SkyBlue from your theme
+    backgroundColor: theme.colors.background, 
   },
   whiteHeader: {
     backgroundColor: 'white',
     borderBottomLeftRadius: 40,
     borderBottomRightRadius: 40,
     alignItems: 'center',
-    paddingTop: 70, // Pushes it down enough to not touch the top
+    paddingTop: 70, 
     paddingBottom: 30,
     elevation: 5,
     shadowColor: '#000',
@@ -120,22 +155,29 @@ const styles = StyleSheet.create({
   podiumUser: {
     alignItems: 'center',
     marginHorizontal: 12,
+    width: 75,
   },
   avatarCircle: {
     width: 65,
     height: 65,
     borderRadius: 35,
     backgroundColor: theme.colors.beige,
+    overflow: 'hidden',
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
     marginBottom: 8,
+    position: 'relative',
+  },
+  catImage: {
+    width: '100%',
+    height: '100%',
   },
   podiumName: {
     fontFamily: theme.fonts.main,
     color: theme.colors.navy,
     fontSize: 12,
     marginBottom: 8,
+    textAlign: 'center',
   },
   podiumBlock: {
     width: 55,

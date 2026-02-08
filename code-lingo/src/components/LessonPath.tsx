@@ -2,17 +2,13 @@ import React from 'react';
 import { ScrollView, StyleSheet, View, Text, Image } from 'react-native';
 import { LessonNode } from './LessonNode';
 import { UnitCard } from './UnitCard';
-import { theme } from '../theme/theme'; // Ensure this path is correct
+import { theme } from '../theme/theme'; 
 
 interface LessonPathProps {
   lessons: { id: string; order: number }[];
-  currentLessonIndex: number;
-
-  // UI bits used in the JSX below
+  currentLessonIndex: number; // This must be passed as profile.currentLessonByLanguage[lang]
   languageName: string;
   totalXp: number;
-
-  // navigation callback (so tapping a node opens lesson.tsx)
   onStartLesson: (idx: number) => void;
 }
 
@@ -23,13 +19,13 @@ export const LessonPath = ({
   totalXp,
   onStartLesson,
 }: LessonPathProps) => {
+  
   return (
     <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
       <UnitCard title={`${languageName} syntax`} />
 
       <View style={styles.pathWrapper}>
-        {/* The Cat & XP Badge */}
-        <View style={styles.catPositioner}>
+        <View style={styles.staticCatContainer}>
           <Image
             source={require('../../assets/cat-avatar.png')}
             style={styles.mascotImage}
@@ -38,18 +34,23 @@ export const LessonPath = ({
         </View>
 
         {lessons.map((lesson, index) => {
-          const zigzag = [100, 140, 100, 60];
+          const zigzag = [0, 80, 0, -80]; 
           const offset = zigzag[index % 4];
+          
+          // Logic to darken nodes and move the ring
+          const isActive = index === currentLessonIndex;
+          const isCompleted = index < currentLessonIndex;
 
           return (
-            <View key={lesson.id} style={[styles.row, { marginLeft: offset }]}>
-              <LessonNode
-                index={index}
-                offset={offset}
-                isActive={index === currentLessonIndex}
-                isCompleted={index < currentLessonIndex}
-                onPress={(i) => onStartLesson(i)}
-              />
+            <View key={lesson.id} style={styles.row}>
+              <View style={{ transform: [{ translateX: offset }], alignItems: 'center' }}>
+                <LessonNode
+                  index={index}
+                  isActive={isActive}
+                  isCompleted={isCompleted}
+                  onPress={(i) => onStartLesson(i)}
+                />
+              </View>
             </View>
           );
         })}
@@ -59,36 +60,10 @@ export const LessonPath = ({
 };
 
 const styles = StyleSheet.create({
-  container: {
-    paddingBottom: 120,
-    backgroundColor: '#DDE8F0', // Matching your light blue background
-  },
-  pathWrapper: {
-    marginTop: 40,
-    width: '100%',
-    minHeight: 600,
-  },
-  catPositioner: {
-    position: 'absolute',
-    left: 40, // Keeps it on the left side of the path
-    top: 100,
-    alignItems: 'center',
-    zIndex: 10,
-  },
-  mascotImage: {
-    width: 85,
-    height: 85,
-    resizeMode: 'contain',
-  },
-  xpText: {
-    fontFamily: 'Courier', // Matches the "hand-drawn" terminal look
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#333',
-    transform: [{ rotate: '-10deg' }],
-    marginTop: -10,
-  },
-  row: {
-    marginVertical: 25,
-  },
+  container: { paddingBottom: 150, backgroundColor: '#DDE8F0' },
+  pathWrapper: { marginTop: 40, width: '100%', alignItems: 'center', position: 'relative' },
+  staticCatContainer: { position: 'absolute', left: 40, top: 100, alignItems: 'center', zIndex: 10 },
+  mascotImage: { width: 90, height: 90, resizeMode: 'contain' },
+  xpText: { fontFamily: theme.fonts.main, fontSize: 20, fontWeight: 'bold', color: '#2D3E50', marginTop: -5, transform: [{ rotate: '-10deg' }] },
+  row: { marginVertical: 15, width: '100%', alignItems: 'center', justifyContent: 'center' },
 });

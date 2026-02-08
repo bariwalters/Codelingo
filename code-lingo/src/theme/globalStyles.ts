@@ -65,7 +65,7 @@ export const globalStyles = StyleSheet.create({
     fontFamily: theme.fonts.main,
     color: theme.colors.white,
     fontSize: 12,
-  }, // <--- Check for this comma!
+  }, 
   centered: {
     justifyContent: 'center',
     alignItems: 'center',

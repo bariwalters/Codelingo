@@ -1,31 +1,49 @@
-import { doc, updateDoc, arrayUnion } from 'firebase/firestore';
-import { db } from '../firebase'; // Ensure this points to your firebase config
+import { doc, updateDoc, arrayUnion, increment, onSnapshot } from 'firebase/firestore';
+import { db } from '../firebase'; 
 import type { LanguageId } from "../types";
-import {
-  getUserProfile,
-  updateAvatar,
-  setLanguages,
-} from "../db";
+import { getUserProfile, updateAvatar, setLanguages } from "../db";
 
 export const userService = {
   getUserProfile,
   updateAvatar,
   setLanguages,
 
-  // We rewrite enrollLanguage here to ensure it uses arrayUnion
+  // Real-time listener for profile updates
+  subscribeToProfile(uid: string, callback: (data: any) => void) {
+    const userRef = doc(db, 'users', uid);
+    return onSnapshot(userRef, (doc) => {
+      if (doc.exists()) {
+        callback({ uid: doc.id, ...doc.data() });
+      }
+    });
+  },
+
+  // Updates XP and lesson progress
+  async addLessonResults(uid: string, xpEarned: number, languageId: LanguageId) {
+    try {
+      const userRef = doc(db, 'users', uid);
+      await updateDoc(userRef, {
+        xp: increment(xpEarned), // Matches your DB field name
+        [`currentLessonByLanguage.${languageId}`]: increment(1),
+        lessonsCompletedCount: increment(1),
+        updatedAt: new Date()
+      });
+    } catch (error) {
+      console.error("Error updating lesson results:", error);
+      throw error;
+    }
+  },
+
   async enrollLanguage(uid: string, langId: LanguageId) {
     try {
       const userRef = doc(db, 'users', uid);
-      
-      // updateDoc with arrayUnion adds the language ONLY if it isn't already there
       await updateDoc(userRef, {
         enrolledLanguages: arrayUnion(langId),
-        currentLanguage: langId // Automatically switch to the new language
+        currentLanguage: langId,
+        [`currentLessonByLanguage.${langId}`]: 0
       });
-      
-      console.log(`User ${uid} successfully enrolled in ${langId}`);
     } catch (error) {
-      console.error("Error in userService.enrollLanguage:", error);
+      console.error("Error enrolling language:", error);
       throw error;
     }
   },
