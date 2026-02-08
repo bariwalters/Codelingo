@@ -118,6 +118,12 @@ export default function LessonScreen({
   return (
     <View style={{ flex: 1, padding: 20, justifyContent: "center" }}>
       <Text style={{ fontWeight: "700" }}>Fill in the blank</Text>
+      <Pressable 
+        onPress={() => handleSpeak(question.promptText)} 
+        style={{ backgroundColor: '#e0e7ff', padding: 8, borderRadius: 8, alignSelf: 'flex-start', marginVertical: 10 }}
+      >
+        <Text style={{ color: '#4f46e5', fontWeight: 'bold' }}>🔈 Listen</Text>
+      </Pressable>
       <Text style={{ marginTop: 10 }}>{question.promptText}</Text>
       <Text style={{ marginTop: 10 }}>{question.codeSnippet}</Text>
 
