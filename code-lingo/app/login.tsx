@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet } from 'react-native';
 import { globalStyles } from '../src/theme/globalStyles';
 import { loginWithEmail } from '../src/firebase/auth';
+import LottieView from 'lottie-react-native';
 
 export default function LoginScreen({ onNavigate }: { onNavigate: () => void }) {
   const [email, setEmail] = useState("");
@@ -19,7 +20,12 @@ export default function LoginScreen({ onNavigate }: { onNavigate: () => void }) 
     <View style={globalStyles.screenContainer}>
       <View style={globalStyles.headerSection}>
         <Text style={[globalStyles.heading, { fontSize: 32 }]}>codeLingo</Text>
-        <View style={{ width: 100, height: 100, borderWidth: 3, borderRadius: 20, borderColor: '#2F4156' }} />
+        <LottieView
+          source={require('../assets/animations/cat_mascot.json')}
+          autoPlay
+          loop
+          style={styles.lottieCat}
+        />
       </View>
 
       <View style={globalStyles.authCard}>
@@ -56,3 +62,11 @@ export default function LoginScreen({ onNavigate }: { onNavigate: () => void }) 
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  lottieCat: {
+    width: 150,
+    height: 150,
+    backgroundColor: '#C8D9E6',
+  },
+});

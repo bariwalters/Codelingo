@@ -23,12 +23,10 @@ export default function LeaderboardScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Header Section with Podium */}
       <View style={styles.headerCard}>
         <Text style={styles.headerTitle}>leaderboard</Text>
         
         <View style={styles.podiumContainer}>
-          {/* 2nd Place */}
           <View style={[styles.podiumSpot, { marginTop: 30 }]}>
             <Image source={{ uri: DUMMY_LEADERBOARD[1].avatar }} style={styles.podiumAvatar} />
             <Text style={styles.podiumName}>{DUMMY_LEADERBOARD[1].username}</Text>
@@ -37,7 +35,6 @@ export default function LeaderboardScreen() {
             </View>
           </View>
 
-          {/* 1st Place */}
           <View style={styles.podiumSpot}>
             <Ionicons name="trophy" size={24} color="#FFD700" style={{ marginBottom: 5 }} />
             <Image source={{ uri: DUMMY_LEADERBOARD[0].avatar }} style={[styles.podiumAvatar, { borderColor: '#FFD700', borderWidth: 3 }]} />
@@ -47,7 +44,6 @@ export default function LeaderboardScreen() {
             </View>
           </View>
 
-          {/* 3rd Place */}
           <View style={[styles.podiumSpot, { marginTop: 45 }]}>
             <Image source={{ uri: DUMMY_LEADERBOARD[2].avatar }} style={styles.podiumAvatar} />
             <Text style={styles.podiumName}>{DUMMY_LEADERBOARD[2].username}</Text>
@@ -58,7 +54,6 @@ export default function LeaderboardScreen() {
         </View>
       </View>
 
-      {/* Rankings List */}
       <FlatList
         data={DUMMY_LEADERBOARD.slice(3)}
         keyExtractor={(item) => item.id}
