@@ -3,12 +3,13 @@ import { View, Text, Pressable, StyleSheet, Image, SafeAreaView, ActivityIndicat
 import type { GeneratedQuestion, QuestionType, LanguageId } from "../src/firebase/types";
 import { generateQuestionGemini } from "../src/ai/gemini";
 import { generateSpeech } from "../src/services/voiceServices";
-import { Audio } from 'expo-av';
+import { Audio, AVPlaybackStatus } from 'expo-av';
 import { Ionicons } from '@expo/vector-icons';
 
 // Firebase Imports
-import { db, auth } from "../src/firebase/config"; 
-import { doc, updateDoc, increment } from "firebase/firestore";
+import { auth } from "../src/firebase/auth"; 
+import { db } from "../src/firebase/db";
+import { doc, updateDoc, increment, serverTimestamp } from "firebase/firestore";
 
 const norm = (s: string) => s.replace(/\s+/g, "").replace(/[“”]/g, '"').replace(/[‘’]/g, "'").trim();
 
@@ -24,7 +25,6 @@ export default function LessonScreen({
   const parsedLessonIndex = Number(lessonIndex);
   const currentLanguage = language;
 
-  // --- PROGRESSION STATES ---
   const [currentStep, setCurrentStep] = useState(0);
   const TOTAL_STEPS = 5;
 
@@ -36,10 +36,8 @@ export default function LessonScreen({
   const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
   const [result, setResult] = useState<"correct" | "incorrect" | null>(null);
 
-  // --- LOGIC ---
   const nextQuestion = useCallback(async (forcedType?: QuestionType) => {
     if (currentStep >= TOTAL_STEPS) return;
-
     const type: QuestionType = forcedType ?? (Math.random() < 0.5 ? "fill_blank" : "arrange");
     try {
       setError(null);
@@ -49,7 +47,6 @@ export default function LessonScreen({
         lessonIndex: parsedLessonIndex,
         questionType: type,
       });
-
       setQuestion(q);
       setArrangedIdxs([]);
       setArrangeResult(null);
@@ -64,28 +61,28 @@ export default function LessonScreen({
 
   const handleContinue = async () => {
     if (loadingQuestion) return;
-
     const isCorrect = arrangeResult === "correct" || result === "correct";
 
     if (isCorrect) {
       const nextStep = currentStep + 1;
-      
       if (nextStep >= TOTAL_STEPS) {
-        // --- LESSON COMPLETION LOGIC ---
         try {
           const user = auth.currentUser;
           if (user) {
             const userRef = doc(db, "users", user.uid);
-            // Increment the level in Firestore so the home screen updates
+            
+            // This targets the exact path in your DB: currentLessonByLanguage.python
             await updateDoc(userRef, {
-              currentLevel: increment(1)
+              [`currentLessonByLanguage.${currentLanguage}`]: parsedLessonIndex + 1,
+              xp: increment(15),
+              updatedAt: serverTimestamp(),
             });
           }
         } catch (e) {
-          console.error("Error updating user level:", e);
+          console.error("Error updating progress:", e);
         }
 
-        Alert.alert("Lesson Complete!", `Level ${parsedLessonIndex} Cleared! Moving to Level ${parsedLessonIndex + 1}.`, [
+        Alert.alert("Lesson Complete!", `Level ${parsedLessonIndex + 1} Cleared!`, [
           { text: "Awesome", onPress: onExit }
         ]);
       } else {
@@ -93,7 +90,6 @@ export default function LessonScreen({
         nextQuestion();
       }
     } else {
-      // If incorrect, reset the current interaction for a retry
       setArrangeResult(null);
       setResult(null);
       setArrangedIdxs([]);
@@ -109,7 +105,7 @@ export default function LessonScreen({
     try {
       const audioDataUri = await generateSpeech(text);
       const { sound } = await Audio.Sound.createAsync({ uri: audioDataUri }, { shouldPlay: true });
-      sound.setOnPlaybackStatusUpdate(async (status) => {
+      sound.setOnPlaybackStatusUpdate(async (status: AVPlaybackStatus) => {
         if (status.isLoaded && status.didJustFinish) await sound.unloadAsync();
       });
     } catch (e) { console.error("Voice Error:", e); }
@@ -128,7 +124,6 @@ export default function LessonScreen({
   const availableIdxs = blocks.map((_, idx) => idx).filter((idx) => !arrangedIdxs.includes(idx));
   const correct = question.correctOrder ?? [];
   const arranged = arrangedIdxs.map((idx) => blocks[idx]);
-
   const progressPercent = (currentStep / TOTAL_STEPS) * 100;
 
   return (
@@ -148,7 +143,6 @@ export default function LessonScreen({
           <Text style={styles.instructionText}>
             {question.questionType === "arrange" ? "Arrange the code blocks" : "Fill in the blank"}
           </Text>
-
           <View style={styles.mascotRow}>
             <Image source={require('../assets/cat-avatar.png')} style={styles.mascotImage} />
             <Pressable style={styles.speechBubble} onPress={() => handleSpeak(question.promptText)}>
@@ -177,7 +171,6 @@ export default function LessonScreen({
                   ))}
                 </View>
               </View>
-
               <View style={styles.optionsArea}>
                 {availableIdxs.map((blockIdx) => (
                   <Pressable
@@ -240,14 +233,11 @@ export default function LessonScreen({
               {(arrangeResult === "incorrect" || result === "incorrect") && (
                 <Text style={styles.explanationText}>Hint: {question.explanation}</Text>
               )}
-              
               <Pressable 
                 onPress={handleContinue} 
                 style={[styles.nextBtn, (arrangeResult === "incorrect" || result === "incorrect") && { backgroundColor: '#dc2626' }]}
               >
-                {loadingQuestion ? (
-                  <ActivityIndicator color="white" />
-                ) : (
+                {loadingQuestion ? <ActivityIndicator color="white" /> : (
                   <Text style={{color: 'white', fontWeight: '900'}}>
                     {currentStep === TOTAL_STEPS - 1 && (arrangeResult === "correct" || result === "correct") ? "FINISH" : "CONTINUE"}
                   </Text>
