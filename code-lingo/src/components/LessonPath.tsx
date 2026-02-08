@@ -5,30 +5,29 @@ import { UnitCard } from './UnitCard';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../theme/theme';
 
-export const LessonPath = ({ lessons, currentLessonIndex }: any) => {
+export const LessonPath = ({ lessons, currentLessonIndex, languageName, totalXp }: any) => {
   return (
     <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
-      <UnitCard />
+      <UnitCard title={`${languageName} syntax`} />
+      
       <View style={styles.pathWrapper}>
+        {/* Persistent Mascot on the left */}
+        <View style={styles.catPositioner}>
+            <Ionicons name="logo-github" size={80} color="#000" /> 
+            <Text style={styles.xpText}>{totalXp} XP</Text>
+        </View>
+
         {lessons.map((lesson: any, index: number) => {
-          const zigzag = [0, 50, 0, -50];
+          // Offsets adjusted to push nodes to the right of the cat
+          const zigzag = [100, 140, 100, 60];
           const offset = zigzag[index % 4];
-          const isActive = index === currentLessonIndex;
           
           return (
-            <View key={lesson.id} style={styles.row}>
-              {/* The Cat Mascot & XP - Only renders next to the active lesson */}
-              {isActive && (
-                <View style={[styles.mascotContainer, { left: offset - 90 }]}>
-                   <Ionicons name="logo-github" size={60} color="#000" /> 
-                   <Text style={styles.xpText}>150 XP</Text>
-                </View>
-              )}
-
+            <View key={lesson.id} style={[styles.row, { marginLeft: offset }]}>
               <LessonNode
                 index={index}
-                offset={offset}
-                isActive={isActive}
+                offset={0} // Fixed: Passing 0 because the row handles the margin
+                isActive={index === currentLessonIndex}
                 isCompleted={index < currentLessonIndex}
               />
             </View>
@@ -40,29 +39,22 @@ export const LessonPath = ({ lessons, currentLessonIndex }: any) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    paddingBottom: 120,
-  },
-  pathWrapper: {
-    alignItems: 'center',
-    marginTop: 30,
-  },
-  row: {
-    width: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  mascotContainer: {
+  container: { paddingBottom: 120 },
+  pathWrapper: { marginTop: 40, width: '100%', minHeight: 600 },
+  catPositioner: {
     position: 'absolute',
+    left: 30,
+    top: 120,
     alignItems: 'center',
-    zIndex: 10,
+    zIndex: 5,
   },
   xpText: {
-    fontFamily: theme.fonts.main,
-    fontSize: 18,
+    fontFamily: 'Courier',
+    fontSize: 22,
     fontWeight: 'bold',
-    color: theme.colors.navy,
+    color: '#333',
+    transform: [{ rotate: '-10deg' }],
     marginTop: -5,
-    transform: [{ rotate: '-10deg' }]
-  }
+  },
+  row: { marginVertical: 20 },
 });

@@ -1,85 +1,44 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '../theme/theme';
 
-interface LandingHeaderProps {
-  language: string;
-  streak: number;
-  enrolledLanguages: string[];
-  onLanguageSelect: (lang: string) => void;
-  onAddLanguage: () => void;
-}
-
-export const LandingHeader = ({ 
-  language, 
-  streak, 
-  enrolledLanguages = [], 
-  onLanguageSelect,
-  onAddLanguage 
-}: LandingHeaderProps) => {
+export const LandingHeader = ({ language, streak, enrolledLanguages, onLanguageSelect, onAddLanguage }: any) => {
   const [isMenuVisible, setIsMenuVisible] = useState(false);
 
-  const handleSelect = (lang: string) => {
-    onLanguageSelect(lang);
-    setIsMenuVisible(false);
-  };
-
-  const getDisplayLanguage = (langId: string) => {
-    switch (langId?.toLowerCase()) {
-      case 'python': return 'Py';
-      case 'javascript': return 'JS';
-      case 'java': return 'Jv';
-      case 'cpp': return 'C++';
-      default: return '??';
+  const getShort = (id: string) => {
+    switch(id.toLowerCase()){
+        case 'python': return 'Py';
+        case 'javascript': return 'JS';
+        case 'typescript': return 'TS';
+        case 'cpp': return 'C++';
+        case 'java': return 'Jv';
+        case 'csharp': return 'C#';
+        default: return '??';
     }
   };
 
   return (
     <View style={styles.headerContainer}>
-      <TouchableOpacity 
-        style={styles.languagePill} 
-        onPress={() => setIsMenuVisible(true)}
-      >
-        <Text style={styles.pillText}>{getDisplayLanguage(language)}</Text>
-        <Ionicons name="chevron-down" size={16} color={theme.colors.white} style={{marginLeft: 4}} />
+      <TouchableOpacity style={styles.languagePill} onPress={() => setIsMenuVisible(true)}>
+        <Text style={styles.pillText}>{getShort(language)}</Text>
+        <Ionicons name="chevron-down" size={16} color="#2D3E50" style={{marginLeft: 4}} />
       </TouchableOpacity>
 
       <Modal transparent visible={isMenuVisible} animationType="fade">
-        <Pressable 
-          style={styles.modalOverlay} 
-          onPress={() => setIsMenuVisible(false)}
-        >
-          <View style={[styles.dropdownMenu, { pointerEvents: 'box-none' }]}>
+        <Pressable style={styles.modalOverlay} onPress={() => setIsMenuVisible(false)}>
+          <View style={styles.dropdownMenu}>
             <View style={styles.arrowUp} />
             <View style={styles.menuContent}>
-              
-              {enrolledLanguages.map((lang) => (
-                <TouchableOpacity 
-                  key={lang} 
-                  style={styles.menuItem} 
-                  onPress={() => handleSelect(lang)}
-                >
+              {enrolledLanguages.map((lang: string) => (
+                <TouchableOpacity key={lang} style={styles.menuItem} onPress={() => { onLanguageSelect(lang); setIsMenuVisible(false); }}>
                   <View style={[styles.langIcon, language === lang && styles.activeLang]}>
-                    <Text style={styles.langIconText}>{getDisplayLanguage(lang)}</Text>
+                    <Text style={styles.langIconText}>{getShort(lang)}</Text>
                   </View>
-                  <Text style={styles.langLabel}>{lang.charAt(0).toUpperCase() + lang.slice(1)}</Text>
+                  <Text style={styles.langLabel}>{lang}</Text>
                 </TouchableOpacity>
               ))}
-
-              <TouchableOpacity 
-                style={styles.menuItem} 
-                onPress={() => {
-                  console.log("Plus clicked!"); 
-                  setIsMenuVisible(false);
-                  setTimeout(() => {
-                    onAddLanguage();
-                  }, 300);
-                }}
-              >
-                <View style={styles.langIcon}>
-                  <Ionicons name="add" size={24} color={theme.colors.navy} />
-                </View>
+              <TouchableOpacity style={styles.menuItem} onPress={() => { setIsMenuVisible(false); setTimeout(onAddLanguage, 300); }}>
+                <View style={styles.langIcon}><Ionicons name="add" size={24} color="#2D3E50" /></View>
                 <Text style={styles.langLabel}>Prog Lang</Text>
               </TouchableOpacity>
             </View>
@@ -87,8 +46,8 @@ export const LandingHeader = ({
         </Pressable>
       </Modal>
 
-      <View style={styles.statContainer}>
-        <Ionicons name="flame" size={28} color="#FF9600" />
+      <View style={styles.streakContainer}>
+        <Ionicons name="flame-outline" size={28} color="#000" />
         <Text style={styles.streakText}>{streak}</Text>
       </View>
     </View>
@@ -96,96 +55,18 @@ export const LandingHeader = ({
 };
 
 const styles = StyleSheet.create({
-  headerContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: 60,
-    paddingHorizontal: theme.spacing.m,
-    paddingBottom: theme.spacing.m,
-    backgroundColor: theme.colors.background,
-    zIndex: 100,
-  },
-  languagePill: {
-    backgroundColor: theme.colors.navy,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-  },
-  pillText: {
-    fontFamily: theme.fonts.main,
-    color: theme.colors.white,
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  statContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  streakText: {
-    fontFamily: theme.fonts.main,
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#FF9600',
-    marginLeft: 4,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.2)',
-  },
-  dropdownMenu: {
-    position: 'absolute',
-    top: 95,
-    left: 15,
-    width: '90%',
-  },
-  arrowUp: {
-    width: 0,
-    height: 0,
-    borderLeftWidth: 12,
-    borderRightWidth: 12,
-    borderBottomWidth: 12,
-    borderLeftColor: 'transparent',
-    borderRightColor: 'transparent',
-    borderBottomColor: theme.colors.navy,
-    marginLeft: 20,
-  },
-  menuContent: {
-    backgroundColor: theme.colors.navy,
-    borderRadius: 20,
-    padding: 20,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'flex-start',
-  },
-  menuItem: {
-    alignItems: 'center',
-    width: '33.3%',
-    marginBottom: 10,
-  },
-  langIcon: {
-    backgroundColor: theme.colors.white,
-    width: 55,
-    height: 55,
-    borderRadius: 15,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  activeLang: {
-    borderWidth: 3,
-    borderColor: theme.colors.teal,
-  },
-  langIconText: {
-    fontFamily: theme.fonts.main,
-    fontWeight: 'bold',
-    fontSize: 18,
-  },
-  langLabel: {
-    color: 'white',
-    fontFamily: theme.fonts.main,
-    marginTop: 8,
-    fontSize: 12,
-  },
+  headerContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 60, paddingHorizontal: 20, paddingBottom: 20, backgroundColor: '#2D3E50' },
+  languagePill: { backgroundColor: 'white', flexDirection: 'row', alignItems: 'center', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 12 },
+  pillText: { color: '#2D3E50', fontSize: 18, fontWeight: 'bold', fontFamily: 'Courier' },
+  streakContainer: { flexDirection: 'row', alignItems: 'center' },
+  streakText: { fontSize: 20, fontWeight: 'bold', color: '#000', marginLeft: 4, fontFamily: 'Courier' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.3)' },
+  dropdownMenu: { position: 'absolute', top: 95, left: 10, right: 10 },
+  arrowUp: { width: 0, height: 0, borderLeftWidth: 12, borderRightWidth: 12, borderBottomWidth: 12, borderBottomColor: '#3F566E', marginLeft: 25, borderLeftColor: 'transparent', borderRightColor: 'transparent' },
+  menuContent: { backgroundColor: '#3F566E', borderRadius: 20, padding: 20, flexDirection: 'row', flexWrap: 'wrap' },
+  menuItem: { alignItems: 'center', width: '33.3%', marginBottom: 15 },
+  langIcon: { backgroundColor: 'white', width: 55, height: 55, borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
+  activeLang: { borderWidth: 3, borderColor: '#4ECDC4' },
+  langIconText: { fontWeight: 'bold', color: '#2D3E50', fontFamily: 'Courier', fontSize: 18 },
+  langLabel: { color: 'white', marginTop: 8, fontSize: 11, fontFamily: 'Courier' }
 });

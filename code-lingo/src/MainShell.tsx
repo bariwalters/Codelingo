@@ -1,150 +1,121 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, Alert, Text, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, Text, TouchableOpacity, StatusBar, ScrollView } from 'react-native';
 import { BottomNavBar } from './components/BottomNavBar';
 import { LandingHeader } from './components/LandingHeader';
 import { LessonPath } from './components/LessonPath';
 import AccountScreen from '../app/account';
 import QuestsScreen from '../app/quests';
 import LeaderboardScreen from '../app/leaderboard';
-// Theme & Services
 import { theme } from './theme/theme';
 import { userService } from './firebase/services/userService';
 
+const ALL_LANGUAGES = [
+  { id: 'python', label: 'Python' },
+  { id: 'javascript', label: 'JavaScript' },
+  { id: 'typescript', label: 'TypeScript' },
+  { id: 'cpp', label: 'C++' },
+  { id: 'csharp', label: 'C#' },
+  { id: 'java', label: 'Java' },
+];
+
 export default function MainShell({ userProfile }: { userProfile: any }) {
   const [currentTab, setCurrentTab] = useState('home');
-  // New state to show/hide the language picker
   const [isAddingLanguage, setIsAddingLanguage] = useState(false);
+  const [activeLang, setActiveLang] = useState(userProfile?.currentLanguage || 'python');
 
-  const dummyLessons = [
-    { id: '1', order: 1 }, 
-    { id: '2', order: 2 }, 
-    { id: '3', order: 3 },
-    { id: '4', order: 4 }, 
-    { id: '5', order: 5 }
-  ];
+  useEffect(() => {
+    if (userProfile?.currentLanguage) {
+      setActiveLang(userProfile.currentLanguage);
+    }
+  }, [userProfile?.currentLanguage]);
+
+  // Only show languages the user hasn't joined yet
+  const availableToEnroll = ALL_LANGUAGES.filter(
+    lang => !userProfile?.enrolledLanguages?.includes(lang.id)
+  );
 
   const handleLanguageSelect = async (newLang: string) => {
+    setActiveLang(newLang);
     try {
       if (userProfile?.uid) {
         await userService.switchCurrentLanguage(userProfile.uid, newLang as any);
       }
     } catch (error) {
-      console.error("Error switching language:", error);
+      console.error("Error switching:", error);
     }
   };
 
-  // Instead of an Alert, we just toggle a View
-  const handleAddLanguage = () => {
-    console.log("MainShell: Opening language selector");
-    setIsAddingLanguage(true);
-  };
-
-  const handleEnroll = async (lang: string) => {
-    try {
-      if (userProfile?.uid) {
-        await userService.enrollLanguage(userProfile.uid, lang as any);
-        setIsAddingLanguage(false); // Close selector on success
-      }
-    } catch (error) {
-      console.error("Enrollment failed:", error);
-    }
-  };
   const renderContent = () => {
-    // If we are in "Add Language" mode, show a special selection screen
     if (isAddingLanguage) {
       return (
-        <View style={styles.addLanguageContainer}>
-          <Text style={styles.title}>Learn a new language</Text>
-          <TouchableOpacity style={styles.langButton} onPress={() => handleEnroll('javascript')}>
-            <Text style={styles.langButtonText}>JavaScript</Text>
+        <ScrollView contentContainerStyle={styles.addLanguageContainer}>
+          <Text style={styles.title}>Chose a Language</Text>
+          {availableToEnroll.map((lang) => (
+            <TouchableOpacity 
+              key={lang.id} 
+              style={styles.langButton} 
+              onPress={async () => {
+                await userService.enrollLanguage(userProfile.uid, lang.id as any);
+                handleLanguageSelect(lang.id);
+                setIsAddingLanguage(false);
+              }}
+            >
+              <Text style={styles.langButtonText}>{lang.label}</Text>
+            </TouchableOpacity>
+          ))}
+          <TouchableOpacity onPress={() => setIsAddingLanguage(false)}>
+            <Text style={styles.cancelLink}>Back to Lessons</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.langButton} onPress={() => handleEnroll('java')}>
-            <Text style={styles.langButtonText}>Java</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.langButton, {backgroundColor: '#ff4444'}]} 
-            onPress={() => setIsAddingLanguage(false)}
-          >
-            <Text style={styles.langButtonText}>Cancel</Text>
-          </TouchableOpacity>
-        </View>
+        </ScrollView>
       );
     }
+
+    const langDisplay = activeLang === 'cpp' ? 'c++' : activeLang === 'csharp' ? 'c#' : activeLang;
 
     switch (currentTab) {
       case 'home':
         return (
           <LessonPath 
-            lessons={dummyLessons} 
-            currentLessonIndex={userProfile?.currentLessonByLanguage?.[userProfile.currentLanguage] || 0} 
+            lessons={[{ id: '1' }, { id: '2' }, { id: '3' }, { id: '4' }, { id: '5' }]} 
+            languageName={langDisplay} 
+            totalXp={userProfile?.totalXp || 0}
+            currentLessonIndex={userProfile?.currentLessonByLanguage?.[activeLang] || 0} 
           />
         );
       case 'quests': return <QuestsScreen userProfile={userProfile} />;
       case 'leaderboard': return <LeaderboardScreen />;
       case 'account': return <AccountScreen userProfile={userProfile} />;
-      default: return <LessonPath lessons={dummyLessons} currentLessonIndex={0} />;
+      default: return <View />;
     }
   };
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
       {currentTab === 'home' && !isAddingLanguage && (
         <LandingHeader 
-          language={userProfile?.currentLanguage || 'python'} 
+          language={activeLang} 
           streak={userProfile?.streak || 0} 
           enrolledLanguages={userProfile?.enrolledLanguages || []}
           onLanguageSelect={handleLanguageSelect}
-          onAddLanguage={handleAddLanguage}
+          onAddLanguage={() => setIsAddingLanguage(true)}
         />
       )}
-
-      <View style={styles.contentArea}>
-        {renderContent()}
-      </View>
-
-      <BottomNavBar 
-        activeTab={currentTab} 
-        onTabPress={(tab: string) => {
+      <View style={styles.contentArea}>{renderContent()}</View>
+      <BottomNavBar activeTab={currentTab} onTabPress={(tab: string) => {
           setCurrentTab(tab);
-          setIsAddingLanguage(false); // Reset if they switch tabs
-        }} 
-      />
+          setIsAddingLanguage(false);
+      }} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
-  contentArea: {
-    flex: 1,
-  },
-  addLanguageContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-    backgroundColor: theme.colors.navy,
-  },
-  title: {
-    fontSize: 24,
-    color: 'white',
-    fontWeight: 'bold',
-    marginBottom: 30,
-  },
-  langButton: {
-    backgroundColor: theme.colors.teal,
-    padding: 15,
-    borderRadius: 12,
-    width: '80%',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  langButtonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-  }
+  container: { flex: 1, backgroundColor: '#DDE8F0' }, // Matches light blue bg in Figma
+  contentArea: { flex: 1 },
+  addLanguageContainer: { padding: 40, alignItems: 'center', backgroundColor: '#2D3E50', flexGrow: 1, justifyContent: 'center' },
+  title: { fontFamily: 'Courier', fontSize: 24, color: 'white', marginBottom: 30, fontWeight: 'bold' },
+  langButton: { backgroundColor: theme.colors.white, padding: 18, borderRadius: 15, width: '100%', alignItems: 'center', marginBottom: 15 },
+  langButtonText: { fontFamily: 'Courier', color: '#2D3E50', fontSize: 18, fontWeight: 'bold' },
+  cancelLink: { color: 'white', fontFamily: 'Courier', marginTop: 20, textDecorationLine: 'underline' }
 });
