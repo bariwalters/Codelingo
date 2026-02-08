@@ -1,20 +1,36 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../theme/theme';
 
 interface LandingHeaderProps {
   language: string;
   streak: number;
+  enrolledLanguages: string[];
+  onLanguageSelect: (lang: string) => void;
+  onAddLanguage: () => void;
 }
 
-export const LandingHeader = ({ language, streak }: LandingHeaderProps) => {
+export const LandingHeader = ({ 
+  language, 
+  streak, 
+  enrolledLanguages = [], 
+  onLanguageSelect,
+  onAddLanguage 
+}: LandingHeaderProps) => {
   const [isMenuVisible, setIsMenuVisible] = useState(false);
 
+  const handleSelect = (lang: string) => {
+    onLanguageSelect(lang);
+    setIsMenuVisible(false);
+  };
+
   const getDisplayLanguage = (langId: string) => {
-    switch (langId.toLowerCase()) {
+    switch (langId?.toLowerCase()) {
       case 'python': return 'Py';
       case 'javascript': return 'JS';
+      case 'java': return 'Jv';
+      case 'cpp': return 'C++';
       default: return '??';
     }
   };
@@ -30,24 +46,37 @@ export const LandingHeader = ({ language, streak }: LandingHeaderProps) => {
       </TouchableOpacity>
 
       <Modal transparent visible={isMenuVisible} animationType="fade">
-        <TouchableOpacity 
+        <Pressable 
           style={styles.modalOverlay} 
-          activeOpacity={1} 
           onPress={() => setIsMenuVisible(false)}
         >
-          <View style={styles.dropdownMenu}>
+          <View style={[styles.dropdownMenu, { pointerEvents: 'box-none' }]}>
             <View style={styles.arrowUp} />
             <View style={styles.menuContent}>
-              {/* Python Option */}
-              <TouchableOpacity style={styles.menuItem}>
-                <View style={[styles.langIcon, language === 'python' && styles.activeLang]}>
-                  <Text style={styles.langIconText}>Py</Text>
-                </View>
-                <Text style={styles.langLabel}>Python</Text>
-              </TouchableOpacity>
+              
+              {enrolledLanguages.map((lang) => (
+                <TouchableOpacity 
+                  key={lang} 
+                  style={styles.menuItem} 
+                  onPress={() => handleSelect(lang)}
+                >
+                  <View style={[styles.langIcon, language === lang && styles.activeLang]}>
+                    <Text style={styles.langIconText}>{getDisplayLanguage(lang)}</Text>
+                  </View>
+                  <Text style={styles.langLabel}>{lang.charAt(0).toUpperCase() + lang.slice(1)}</Text>
+                </TouchableOpacity>
+              ))}
 
-              {/* Add Option */}
-              <TouchableOpacity style={styles.menuItem}>
+              <TouchableOpacity 
+                style={styles.menuItem} 
+                onPress={() => {
+                  console.log("Plus clicked!"); 
+                  setIsMenuVisible(false);
+                  setTimeout(() => {
+                    onAddLanguage();
+                  }, 300);
+                }}
+              >
                 <View style={styles.langIcon}>
                   <Ionicons name="add" size={24} color={theme.colors.navy} />
                 </View>
@@ -55,7 +84,7 @@ export const LandingHeader = ({ language, streak }: LandingHeaderProps) => {
               </TouchableOpacity>
             </View>
           </View>
-        </TouchableOpacity>
+        </Pressable>
       </Modal>
 
       <View style={styles.statContainer}>
@@ -128,11 +157,13 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 20,
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-start',
   },
   menuItem: {
     alignItems: 'center',
-    flex: 1,
+    width: '33.3%',
+    marginBottom: 10,
   },
   langIcon: {
     backgroundColor: theme.colors.white,
