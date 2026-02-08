@@ -1,6 +1,6 @@
 🐱 Codelingo
 
-Codelingo is an AI-powered, gamified mobile learning platform designed to help users master programming languages through interactive, bite-sized lessons. Built with **React Native (Expo)**, it leverages the **Google Gemini Pro AI** to dynamically generate coding challenges tailored to the user's current skill level.
+Codelingo is an AI-powered, gamified mobile learning platform designed to help users master programming languages through interactive, bite-sized lessons. Built with React Native (Expo), it leverages the Google Gemini Pro AI to dynamically generate coding challenges tailored to the user's current skill level.
 
 
 🚀 Key Features
