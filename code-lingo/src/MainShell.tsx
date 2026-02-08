@@ -1,57 +1,88 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, Alert, Text, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, Text, TouchableOpacity, StatusBar, ScrollView } from 'react-native';
 import { BottomNavBar } from './components/BottomNavBar';
 import { LandingHeader } from './components/LandingHeader';
 import { LessonPath } from './components/LessonPath';
 import AccountScreen from '../app/account';
 import QuestsScreen from '../app/quests';
 import LeaderboardScreen from '../app/leaderboard';
-import LessonScreen from "../app/lesson";
+import LessonScreen from '../app/lesson';
 
-// Theme & Services
 import { theme } from './theme/theme';
 import { userService } from './firebase/services/userService';
+import type { LanguageId } from './firebase/types';
 
-export default function MainShell({ userProfile }: { userProfile: any }) {
+const ALL_LANGUAGES = [
+  { id: 'python', label: 'Python' },
+  { id: 'javascript', label: 'JavaScript' },
+  { id: 'typescript', label: 'TypeScript' },
+  { id: 'cpp', label: 'C++' },
+  { id: 'csharp', label: 'C#' },
+  { id: 'java', label: 'Java' },
+];
+
+export default function MainShell({ userProfile: initialProfile }: { userProfile: any }) {
   const [currentTab, setCurrentTab] = useState('home');
+
+  // Lesson screen "navigation"
   const [activeScreen, setActiveScreen] = useState<'tabs' | 'lesson'>('tabs');
   const [selectedLessonIndex, setSelectedLessonIndex] = useState<number>(0);
 
-  // New state to show/hide the language picker
+  // Language picker UI
   const [isAddingLanguage, setIsAddingLanguage] = useState(false);
 
+  // Local profile copy so UI updates immediately
+  const [userProfile, setUserProfile] = useState(initialProfile);
+  const [activeLang, setActiveLang] = useState(initialProfile?.currentLanguage || 'python');
+
+  // keep local state synced with incoming profile
+  useEffect(() => {
+    setUserProfile(initialProfile);
+    if (initialProfile?.currentLanguage) setActiveLang(initialProfile.currentLanguage);
+  }, [initialProfile]);
+
+  // lessons list (stable ids)
   const dummyLessons = [
-    { id: '1', order: 1 }, 
-    { id: '2', order: 2 }, 
+    { id: '1', order: 1 },
+    { id: '2', order: 2 },
     { id: '3', order: 3 },
-    { id: '4', order: 4 }, 
-    { id: '5', order: 5 }
+    { id: '4', order: 4 },
+    { id: '5', order: 5 },
   ];
 
-  const handleLanguageSelect = async (newLang: string) => {
+  const availableToEnroll = ALL_LANGUAGES.filter(
+    (lang) => !userProfile?.enrolledLanguages?.includes(lang.id)
+  );
+
+  const handleLanguageSelect = async (langId: string) => {
+    setActiveLang(langId);
     try {
       if (userProfile?.uid) {
-        await userService.switchCurrentLanguage(userProfile.uid, newLang as any);
+        await userService.switchCurrentLanguage(userProfile.uid, langId as any);
       }
     } catch (error) {
-      console.error("Error switching language:", error);
+      console.error('Selection switch failed:', error);
     }
   };
 
-  // Instead of an Alert, we just toggle a View
-  const handleAddLanguage = () => {
-    console.log("MainShell: Opening language selector");
-    setIsAddingLanguage(true);
-  };
+  const handleEnrollNewLanguage = async (langId: string) => {
+    if (!userProfile?.uid) return;
 
-  const handleEnroll = async (lang: string) => {
+    // instant UI update
+    const updatedEnrolled = [...(userProfile.enrolledLanguages || []), langId];
+    setUserProfile({
+      ...userProfile,
+      enrolledLanguages: updatedEnrolled,
+      currentLanguage: langId,
+    });
+    setActiveLang(langId);
+    setIsAddingLanguage(false);
+
     try {
-      if (userProfile?.uid) {
-        await userService.enrollLanguage(userProfile.uid, lang as any);
-        setIsAddingLanguage(false); // Close selector on success
-      }
+      await userService.enrollLanguage(userProfile.uid, langId as any);
+      await userService.switchCurrentLanguage(userProfile.uid, langId as any);
     } catch (error) {
-      console.error("Enrollment failed:", error);
+      console.error('Enrollment failed:', error);
     }
   };
 
@@ -60,125 +91,127 @@ export default function MainShell({ userProfile }: { userProfile: any }) {
     setActiveScreen('lesson');
   };
 
-
   const renderContent = () => {
-    // If we are in "Add Language" mode, show a special selection screen
     if (isAddingLanguage) {
       return (
-        <View style={styles.addLanguageContainer}>
-          <Text style={styles.title}>Learn a new language</Text>
-          <TouchableOpacity style={styles.langButton} onPress={() => handleEnroll('javascript')}>
-            <Text style={styles.langButtonText}>JavaScript</Text>
+        <ScrollView contentContainerStyle={styles.addLanguageContainer}>
+          <Text style={styles.title}>Choose a Language</Text>
+          {availableToEnroll.map((lang) => (
+            <TouchableOpacity
+              key={lang.id}
+              style={styles.langButton}
+              onPress={() => handleEnrollNewLanguage(lang.id)}
+            >
+              <Text style={styles.langButtonText}>{lang.label}</Text>
+            </TouchableOpacity>
+          ))}
+          <TouchableOpacity onPress={() => setIsAddingLanguage(false)}>
+            <Text style={styles.cancelLink}>Back to Lessons</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.langButton} onPress={() => handleEnroll('java')}>
-            <Text style={styles.langButtonText}>Java</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.langButton, {backgroundColor: '#ff4444'}]} 
-            onPress={() => setIsAddingLanguage(false)}
-          >
-            <Text style={styles.langButtonText}>Cancel</Text>
-          </TouchableOpacity>
-        </View>
+        </ScrollView>
       );
     }
+
+    const langLabel =
+      ALL_LANGUAGES.find((l) => l.id === activeLang)?.label.toLowerCase() || activeLang;
 
     switch (currentTab) {
       case 'home':
         return (
-          <LessonPath 
-            lessons={dummyLessons} 
-            currentLessonIndex={userProfile?.currentLessonByLanguage?.[userProfile.currentLanguage] || 0}
+          <LessonPath
+            lessons={dummyLessons}
+            languageName={langLabel}
+            totalXp={userProfile?.totalXp || 0}
+            currentLessonIndex={userProfile?.currentLessonByLanguage?.[activeLang] || 0}
             onStartLesson={handleStartLesson}
           />
         );
 
-      case 'quests': return <QuestsScreen userProfile={userProfile} />;
-      case 'leaderboard': return <LeaderboardScreen />;
-      case 'account': return <AccountScreen userProfile={userProfile} />;
+      case 'quests':
+        return <QuestsScreen userProfile={userProfile} />;
+      case 'leaderboard':
+        return <LeaderboardScreen />;
+      case 'account':
+        return <AccountScreen userProfile={userProfile} />;
       default:
-        return (
-          <LessonPath
-            lessons={dummyLessons}
-            currentLessonIndex={0}
-            onStartLesson={handleStartLesson}
-          />
-        );
+        return <View />;
     }
   };
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+
       {activeScreen === 'lesson' ? (
         <LessonScreen
           lessonIndex={selectedLessonIndex}
-          language={userProfile?.currentLanguage || 'python'}
+          language={(activeLang as LanguageId) || ('python' as LanguageId)}
           onExit={() => setActiveScreen('tabs')}
         />
       ) : (
         <>
           {currentTab === 'home' && !isAddingLanguage && (
-            <LandingHeader 
-              language={userProfile?.currentLanguage || 'python'} 
-              streak={userProfile?.streak || 0} 
+            <LandingHeader
+              language={activeLang}
+              streak={userProfile?.streak || 0}
               enrolledLanguages={userProfile?.enrolledLanguages || []}
               onLanguageSelect={handleLanguageSelect}
-              onAddLanguage={handleAddLanguage}
+              onAddLanguage={() => setIsAddingLanguage(true)}
             />
           )}
 
-          <View style={styles.contentArea}>
-            {renderContent()}
-          </View>
+          <View style={styles.contentArea}>{renderContent()}</View>
 
-          <BottomNavBar 
-            activeTab={currentTab} 
+          <BottomNavBar
+            activeTab={currentTab}
             onTabPress={(tab: string) => {
               setCurrentTab(tab);
               setIsAddingLanguage(false);
               setActiveScreen('tabs');
-
-            }} 
+            }}
           />
         </>
       )}
     </View>
   );
-
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: theme.colors.background,
-  },
-  contentArea: {
-    flex: 1,
-  },
+  container: { flex: 1, backgroundColor: '#DDE8F0' },
+  contentArea: { flex: 1 },
+
   addLanguageContainer: {
-    flex: 1,
-    justifyContent: 'center',
+    padding: 40,
     alignItems: 'center',
-    padding: 20,
-    backgroundColor: theme.colors.navy,
+    backgroundColor: '#2D3E50',
+    flexGrow: 1,
+    justifyContent: 'center',
   },
   title: {
+    fontFamily: 'Courier',
     fontSize: 24,
     color: 'white',
-    fontWeight: 'bold',
     marginBottom: 30,
+    fontWeight: 'bold',
   },
   langButton: {
-    backgroundColor: theme.colors.teal,
-    padding: 15,
-    borderRadius: 12,
-    width: '80%',
+    backgroundColor: 'white',
+    padding: 18,
+    borderRadius: 15,
+    width: '100%',
     alignItems: 'center',
     marginBottom: 15,
   },
   langButtonText: {
-    color: 'white',
+    fontFamily: 'Courier',
+    color: '#2D3E50',
     fontSize: 18,
     fontWeight: 'bold',
-  }
+  },
+  cancelLink: {
+    color: 'white',
+    fontFamily: 'Courier',
+    marginTop: 20,
+    textDecorationLine: 'underline',
+  },
 });
