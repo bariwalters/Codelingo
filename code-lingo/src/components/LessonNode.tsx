@@ -1,22 +1,21 @@
 import React from 'react';
-import { TouchableOpacity, StyleSheet, View } from 'react-native';
+import { TouchableOpacity, StyleSheet, View, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../theme/theme';
-
 
 interface LessonNodeProps {
   offset: number;
   isActive?: boolean;
   isCompleted?: boolean;
+  index: number; // Added index for numbering
 }
 
-
-export const LessonNode = ({ offset, isActive, isCompleted }: LessonNodeProps) => {
+export const LessonNode = ({ offset, isActive, isCompleted, index }: LessonNodeProps) => {
   return (
-    <View style={{ transform: [{ translateX: offset }] }}>
-      {/* Dashed Ring for the current active lesson */}
+    <View style={[styles.nodeContainer, { transform: [{ translateX: offset }] }]}>
+      {/* Dashed Ring now centered behind the circle */}
       {isActive && <View style={styles.dashedRing} />}
-     
+      
       <TouchableOpacity
         style={[
           styles.nodeCircle,
@@ -32,25 +31,35 @@ export const LessonNode = ({ offset, isActive, isCompleted }: LessonNodeProps) =
         {isActive ? (
           <Ionicons name="play" size={40} color={theme.colors.white} />
         ) : (
-          isCompleted && <Ionicons name="checkmark" size={40} color={theme.colors.white} />
+          <Text style={styles.nodeNumber}>{index + 1}</Text>
         )}
       </TouchableOpacity>
     </View>
   );
 };
 
-
 const styles = StyleSheet.create({
+  nodeContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 15,
+  },
   nodeCircle: {
     width: 80,
     height: 80,
     borderRadius: 40,
     justifyContent: 'center',
     alignItems: 'center',
-    marginVertical: 15,
+    zIndex: 2,
     // The 3D button shadow effect
     borderBottomWidth: 6,
     borderBottomColor: 'rgba(0,0,0,0.2)',
+  },
+  nodeNumber: {
+    fontFamily: theme.fonts.main,
+    fontSize: 24,
+    color: theme.colors.white,
+    fontWeight: 'bold',
   },
   dashedRing: {
     position: 'absolute',
@@ -60,7 +69,6 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: theme.colors.teal,
     borderStyle: 'dashed',
-    top: -10,
-    left: -10,
+    zIndex: 1,
   }
 });

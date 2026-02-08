@@ -1,33 +1,62 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../theme/theme';
 
-// Define the shape of the data the component expects
 interface LandingHeaderProps {
   language: string;
   streak: number;
 }
 
 export const LandingHeader = ({ language, streak }: LandingHeaderProps) => {
-  // Helper to turn 'javascript' into 'JS', etc.
+  const [isMenuVisible, setIsMenuVisible] = useState(false);
+
   const getDisplayLanguage = (langId: string) => {
     switch (langId.toLowerCase()) {
       case 'python': return 'Py';
       case 'javascript': return 'JS';
-      case 'java': return 'Jv';
-      case 'cpp': return 'C++';
-      case 'sql': return 'SQL';
       default: return '??';
     }
   };
 
   return (
     <View style={styles.headerContainer}>
-      <TouchableOpacity style={styles.languagePill}>
+      <TouchableOpacity 
+        style={styles.languagePill} 
+        onPress={() => setIsMenuVisible(true)}
+      >
         <Text style={styles.pillText}>{getDisplayLanguage(language)}</Text>
         <Ionicons name="chevron-down" size={16} color={theme.colors.white} style={{marginLeft: 4}} />
       </TouchableOpacity>
+
+      <Modal transparent visible={isMenuVisible} animationType="fade">
+        <TouchableOpacity 
+          style={styles.modalOverlay} 
+          activeOpacity={1} 
+          onPress={() => setIsMenuVisible(false)}
+        >
+          <View style={styles.dropdownMenu}>
+            <View style={styles.arrowUp} />
+            <View style={styles.menuContent}>
+              {/* Python Option */}
+              <TouchableOpacity style={styles.menuItem}>
+                <View style={[styles.langIcon, language === 'python' && styles.activeLang]}>
+                  <Text style={styles.langIconText}>Py</Text>
+                </View>
+                <Text style={styles.langLabel}>Python</Text>
+              </TouchableOpacity>
+
+              {/* Add Option */}
+              <TouchableOpacity style={styles.menuItem}>
+                <View style={styles.langIcon}>
+                  <Ionicons name="add" size={24} color={theme.colors.navy} />
+                </View>
+                <Text style={styles.langLabel}>Prog Lang</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
 
       <View style={styles.statContainer}>
         <Ionicons name="flame" size={28} color="#FF9600" />
@@ -42,10 +71,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: 60, // Increased for modern iPhone status bars
+    paddingTop: 60,
     paddingHorizontal: theme.spacing.m,
     paddingBottom: theme.spacing.m,
     backgroundColor: theme.colors.background,
+    zIndex: 100,
   },
   languagePill: {
     backgroundColor: theme.colors.navy,
@@ -54,12 +84,6 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 12,
-    // Subtle shadow for depth
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
   },
   pillText: {
     fontFamily: theme.fonts.main,
@@ -77,5 +101,60 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#FF9600',
     marginLeft: 4,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+  },
+  dropdownMenu: {
+    position: 'absolute',
+    top: 95,
+    left: 15,
+    width: '90%',
+  },
+  arrowUp: {
+    width: 0,
+    height: 0,
+    borderLeftWidth: 12,
+    borderRightWidth: 12,
+    borderBottomWidth: 12,
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
+    borderBottomColor: theme.colors.navy,
+    marginLeft: 20,
+  },
+  menuContent: {
+    backgroundColor: theme.colors.navy,
+    borderRadius: 20,
+    padding: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  menuItem: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  langIcon: {
+    backgroundColor: theme.colors.white,
+    width: 55,
+    height: 55,
+    borderRadius: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  activeLang: {
+    borderWidth: 3,
+    borderColor: theme.colors.teal,
+  },
+  langIconText: {
+    fontFamily: theme.fonts.main,
+    fontWeight: 'bold',
+    fontSize: 18,
+  },
+  langLabel: {
+    color: 'white',
+    fontFamily: theme.fonts.main,
+    marginTop: 8,
+    fontSize: 12,
   },
 });

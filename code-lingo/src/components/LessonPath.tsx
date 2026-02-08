@@ -1,25 +1,37 @@
 import React from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View, Text } from 'react-native';
 import { LessonNode } from './LessonNode';
 import { UnitCard } from './UnitCard';
+import { Ionicons } from '@expo/vector-icons';
+import { theme } from '../theme/theme';
 
 export const LessonPath = ({ lessons, currentLessonIndex }: any) => {
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
       <UnitCard />
       <View style={styles.pathWrapper}>
         {lessons.map((lesson: any, index: number) => {
-          // Zigzag offset pattern: center, right, center, left
           const zigzag = [0, 50, 0, -50];
           const offset = zigzag[index % 4];
+          const isActive = index === currentLessonIndex;
           
           return (
-            <LessonNode
-              key={lesson.id}
-              offset={offset}
-              isActive={index === currentLessonIndex}
-              isCompleted={index < currentLessonIndex}
-            />
+            <View key={lesson.id} style={styles.row}>
+              {/* The Cat Mascot & XP - Only renders next to the active lesson */}
+              {isActive && (
+                <View style={[styles.mascotContainer, { left: offset - 90 }]}>
+                   <Ionicons name="logo-github" size={60} color="#000" /> 
+                   <Text style={styles.xpText}>150 XP</Text>
+                </View>
+              )}
+
+              <LessonNode
+                index={index}
+                offset={offset}
+                isActive={isActive}
+                isCompleted={index < currentLessonIndex}
+              />
+            </View>
           );
         })}
       </View>
@@ -29,10 +41,28 @@ export const LessonPath = ({ lessons, currentLessonIndex }: any) => {
 
 const styles = StyleSheet.create({
   container: {
-    paddingBottom: 120, // Avoid overlapping with navbar
+    paddingBottom: 120,
   },
   pathWrapper: {
     alignItems: 'center',
     marginTop: 30,
+  },
+  row: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  mascotContainer: {
+    position: 'absolute',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  xpText: {
+    fontFamily: theme.fonts.main,
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: theme.colors.navy,
+    marginTop: -5,
+    transform: [{ rotate: '-10deg' }]
   }
 });
