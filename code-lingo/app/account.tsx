@@ -1,128 +1,234 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
-import { globalStyles } from '../src/theme/globalStyles';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { theme } from '../src/theme/theme';
 import { logout } from '../src/firebase/auth';
 
 export default function AccountScreen({ userProfile }: any) {
+  const suggestions = [
+    { id: '1', name: 'User 1' },
+    { id: '2', name: 'User 2' },
+    { id: '3', name: 'User 3' },
+  ];
+
   return (
-    <ScrollView style={styles.container}>
-      {/* Profile Header Section */}
-      <View style={styles.headerCard}>
-        <Text style={styles.usernameText}>{userProfile?.username || 'coder'}</Text>
-        <View style={styles.avatarCircle}>
-           <Image 
-             source={{ uri: 'https://api.dicebear.com/7.x/bottts/png?seed=' + userProfile?.uid }} 
-             style={styles.avatarImage} 
-           />
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      {/* Header with Settings Gear */}
+      <View style={styles.topNav}>
+        <Text style={styles.usernameHeader}>{userProfile?.username || 'alexa'}</Text>
+        <TouchableOpacity>
+          <Ionicons name="settings-outline" size={24} color={theme.colors.navy} />
+        </TouchableOpacity>
+      </View>
+
+      {/* Profile Section */}
+      <View style={styles.profileSection}>
+        <View style={styles.avatarContainer}>
+          <Image 
+            source={require('../assets/cat-avatar.png')} 
+            style={styles.avatarImage} 
+          />
         </View>
       </View>
 
-      {/* Stats Summary Row */}
-      <View style={styles.statsRow}>
-        <View style={styles.statBox}>
-          <Text style={styles.statNumber}>1</Text>
-          <Text style={styles.statLabel}>courses</Text>
+      {/* Stats Summary Section */}
+      <View style={styles.statsContainer}>
+        <View style={styles.statsRow}>
+          <View style={styles.statBox}>
+             <View style={styles.badgeRow}>
+                <View style={[styles.courseBadge, {backgroundColor: '#b0b0b0'}]}><Text style={styles.badgeText}>Py</Text></View>
+                <View style={[styles.courseBadge, {backgroundColor: '#cbd5e0'}]}><Text style={styles.badgeText}>TS</Text></View>
+             </View>
+            <Text style={styles.statLabel}>courses</Text>
+          </View>
+          <View style={styles.statBox}>
+            <Text style={styles.statNumber}>2</Text>
+            <Text style={styles.statLabel}>following</Text>
+          </View>
+          <View style={styles.statBox}>
+            <Text style={styles.statNumber}>2</Text>
+            <Text style={styles.statLabel}>followers</Text>
+          </View>
         </View>
-        <View style={styles.statBox}>
-          <Text style={styles.statNumber}>0</Text>
-          <Text style={styles.statLabel}>following</Text>
+
+        <Text style={styles.sectionTitle}>overview</Text>
+        
+        {/* Overview Grid */}
+        <View style={styles.overviewGrid}>
+            <View style={styles.overviewItem}>
+                <MaterialCommunityIcons name="fire" size={26} color="#e53e3e" />
+                <Text style={styles.overviewValue}>{userProfile?.streak || 0}</Text>
+            </View>
+            <View style={styles.overviewItem}>
+                <View style={[styles.courseBadge, {backgroundColor: '#b0b0b0', width: 24, height: 24, marginRight: 0}]}><Text style={[styles.badgeText, {fontSize: 10}]}>Py</Text></View>
+                <Text style={styles.overviewValue}>9</Text>
+            </View>
+            <View style={styles.overviewItem}>
+                <MaterialCommunityIcons name="shield-outline" size={26} color={theme.colors.navy} />
+                <Text style={styles.overviewValue}>gold</Text>
+            </View>
+            <View style={styles.overviewItem}>
+                <MaterialCommunityIcons name="lightning-bolt" size={26} color="#ecc94b" />
+                <Text style={styles.overviewValue}>{userProfile?.xp || 10} xp</Text>
+            </View>
         </View>
-        <View style={styles.statBox}>
-          <Text style={styles.statNumber}>0</Text>
-          <Text style={styles.statLabel}>followers</Text>
-        </View>
+
+        <Text style={styles.sectionTitle}>friend suggestions</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.suggestionsScroll}>
+          {suggestions.map((item) => (
+            <View key={item.id} style={styles.suggestionCard}>
+              <TouchableOpacity style={styles.closeCard}>
+                <Ionicons name="close" size={18} color="#718096" />
+              </TouchableOpacity>
+              <View style={styles.suggestionAvatar}>
+                 <Ionicons name="person" size={40} color="black" />
+              </View>
+              <TouchableOpacity style={styles.followBtn}>
+                <Text style={styles.followText}>follow</Text>
+              </TouchableOpacity>
+            </View>
+          ))}
+        </ScrollView>
+
+        <TouchableOpacity style={styles.logoutBtn} onPress={() => logout()}>
+          <Text style={styles.logoutText}>log out</Text>
+        </TouchableOpacity>
       </View>
-
-      <Text style={styles.sectionTitle}>overview</Text>
-
-      {/* Overview Grid */}
-      <View style={styles.grid}>
-        <View style={styles.gridCard}>
-          <Text style={styles.cardEmoji}>🔥</Text>
-          <Text style={styles.cardValue}>{userProfile?.streak || 0}</Text>
-          <Text style={styles.cardLabel}>day streak</Text>
-        </View>
-        <View style={styles.gridCard}>
-          <Text style={styles.cardEmoji}>⭐</Text>
-          <Text style={styles.cardValue}>{userProfile?.xp || 0}</Text>
-          <Text style={styles.cardLabel}>total xp</Text>
-        </View>
-      </View>
-
-      <TouchableOpacity style={styles.logoutBtn} onPress={() => logout()}>
-        <Text style={styles.logoutText}>log out</Text>
-      </TouchableOpacity>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
-  headerCard: {
-    backgroundColor: theme.colors.white,
+  container: { flex: 1, backgroundColor: 'white' },
+  topNav: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 25,
     paddingTop: 60,
-    paddingBottom: 30,
-    alignItems: 'center',
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
   },
-  usernameText: {
-    fontFamily: theme.fonts.main,
-    fontSize: 28,
+  usernameHeader: {
+    fontSize: 32,
+    fontFamily: theme.fonts.main, // Updated
     color: theme.colors.navy,
-    marginBottom: 15,
   },
-  avatarCircle: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: theme.colors.background,
-    justifyContent: 'center',
+  profileSection: {
     alignItems: 'center',
-    borderWidth: 3,
-    borderColor: theme.colors.navy,
+    marginVertical: 20,
   },
-  avatarImage: { width: 100, height: 100 },
+  avatarContainer: {
+    width: 150,
+    height: 150,
+    backgroundColor: 'white',
+  },
+  avatarImage: { width: '100%', height: '100%', resizeMode: 'contain' },
+  statsContainer: {
+    backgroundColor: '#d1dce7', 
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    minHeight: 500
+  },
   statsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingVertical: 20,
+    justifyContent: 'space-between',
+    marginBottom: 30,
   },
-  statBox: { alignItems: 'center' },
-  statNumber: { fontSize: 20, fontWeight: 'bold', color: theme.colors.navy },
-  statLabel: { fontSize: 14, color: theme.colors.teal },
+  statBox: { alignItems: 'flex-start', flex: 1 },
+  badgeRow: { flexDirection: 'row', marginBottom: 5 },
+  courseBadge: {
+    width: 35,
+    height: 35,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 5,
+    borderWidth: 1,
+    borderColor: 'rgba(0,0,0,0.1)'
+  },
+  badgeText: { 
+    fontSize: 14, 
+    fontFamily: theme.fonts.main, // Updated
+    color: '#4a5568' 
+  },
+  statNumber: { 
+    fontSize: 22, 
+    fontFamily: theme.fonts.main, // Updated
+    color: theme.colors.navy, 
+    marginBottom: 5 
+  },
+  statLabel: { 
+    fontSize: 16, 
+    color: 'black', 
+    fontFamily: theme.fonts.main // Updated
+  },
   sectionTitle: {
-    fontFamily: theme.fonts.main,
-    fontSize: 22,
-    color: theme.colors.navy,
-    marginLeft: 20,
-    marginTop: 10,
+    fontSize: 20,
+    color: 'black',
+    fontFamily: theme.fonts.main, // Updated
+    marginBottom: 15,
   },
-  grid: {
+  overviewGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-around',
-    padding: 10,
+    marginBottom: 20,
   },
-  gridCard: {
-    backgroundColor: theme.colors.white,
-    width: '45%',
-    padding: 15,
-    borderRadius: 15,
-    marginVertical: 10,
-    borderBottomWidth: 4,
-    borderBottomColor: 'rgba(0,0,0,0.1)',
-  },
-  cardEmoji: { fontSize: 24 },
-  cardValue: { fontSize: 18, fontWeight: 'bold', color: theme.colors.navy },
-  cardLabel: { fontSize: 12, color: theme.colors.teal },
-  logoutBtn: {
-    margin: 40,
-    padding: 15,
-    backgroundColor: '#ff4444',
-    borderRadius: 10,
+  overviewItem: {
+    width: '50%',
+    flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 15,
   },
-  logoutText: { color: 'white', fontWeight: 'bold' }
+  overviewValue: {
+    fontSize: 18,
+    fontFamily: theme.fonts.main, // Updated
+    marginLeft: 10,
+    color: '#4a5568',
+  },
+  suggestionsScroll: {
+    flexDirection: 'row',
+    marginBottom: 30,
+  },
+  suggestionCard: {
+    backgroundColor: '#9ca3af',
+    width: 140,
+    height: 170,
+    borderRadius: 20,
+    marginRight: 15,
+    alignItems: 'center',
+    padding: 10,
+    justifyContent: 'space-between'
+  },
+  closeCard: { alignSelf: 'flex-end' },
+  suggestionAvatar: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: 'white',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  followBtn: {
+    backgroundColor: '#edf2f7',
+    paddingVertical: 6,
+    paddingHorizontal: 20,
+    borderRadius: 15,
+    width: '100%',
+    alignItems: 'center'
+  },
+  followText: { 
+    fontFamily: theme.fonts.main, // Updated
+    color: '#4a5568' 
+  },
+  logoutBtn: {
+    padding: 15,
+    backgroundColor: '#e53e3e',
+    borderRadius: 15,
+    alignItems: 'center',
+    marginBottom: 50,
+  },
+  logoutText: { 
+    color: 'white', 
+    fontFamily: theme.fonts.main // Updated
+  }
 });
