@@ -12,7 +12,15 @@ export default function AccountScreen({ userProfile }: any) {
   ];
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <ScrollView 
+      style={styles.container} 
+      showsVerticalScrollIndicator={false}
+      // flexGrow ensures the content fills the screen so the blue goes to the bottom
+      contentContainerStyle={styles.scrollContent}
+      // This prevents the white flash when bouncing at the bottom on iOS
+      bounces={true} 
+      overScrollMode="always"
+    >
       {/* Header with Settings Gear */}
       <View style={styles.topNav}>
         <Text style={styles.usernameHeader}>{userProfile?.username || 'alexa'}</Text>
@@ -53,7 +61,6 @@ export default function AccountScreen({ userProfile }: any) {
 
         <Text style={styles.sectionTitle}>overview</Text>
         
-        {/* Overview Grid */}
         <View style={styles.overviewGrid}>
             <View style={styles.overviewItem}>
                 <MaterialCommunityIcons name="fire" size={26} color="#e53e3e" />
@@ -93,13 +100,23 @@ export default function AccountScreen({ userProfile }: any) {
         <TouchableOpacity style={styles.logoutBtn} onPress={() => logout()}>
           <Text style={styles.logoutText}>log out</Text>
         </TouchableOpacity>
+
+        {/* EXTRA SPACE PADDER: Matches the blue background to fix the white gap */}
+        <View style={{ height: 125 }} />
       </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: 'white' },
+  container: { 
+    flex: 1, 
+    backgroundColor: 'white' 
+  },
+  scrollContent: {
+    flexGrow: 1,
+    // Removed paddingBottom from here!
+  },
   topNav: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -109,7 +126,7 @@ const styles = StyleSheet.create({
   },
   usernameHeader: {
     fontSize: 32,
-    fontFamily: theme.fonts.main, // Updated
+    fontFamily: theme.fonts.main,
     color: theme.colors.navy,
   },
   profileSection: {
@@ -121,21 +138,34 @@ const styles = StyleSheet.create({
     height: 150,
     backgroundColor: 'white',
   },
-  avatarImage: { width: '100%', height: '100%', resizeMode: 'contain' },
+  avatarImage: { 
+    width: '100%', 
+    height: '100%', 
+    resizeMode: 'contain' 
+  },
   statsContainer: {
     backgroundColor: '#d1dce7', 
-    flex: 1,
     paddingHorizontal: 20,
     paddingTop: 20,
-    minHeight: 500
+    flex: 1, 
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    // Margin Bottom is 0 to ensure the color sits flush
+    marginBottom: 0,
   },
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 30,
   },
-  statBox: { alignItems: 'flex-start', flex: 1 },
-  badgeRow: { flexDirection: 'row', marginBottom: 5 },
+  statBox: { 
+    alignItems: 'flex-start', 
+    flex: 1 
+  },
+  badgeRow: { 
+    flexDirection: 'row', 
+    marginBottom: 5 
+  },
   courseBadge: {
     width: 35,
     height: 35,
@@ -148,24 +178,24 @@ const styles = StyleSheet.create({
   },
   badgeText: { 
     fontSize: 14, 
-    fontFamily: theme.fonts.main, // Updated
+    fontFamily: theme.fonts.main,
     color: '#4a5568' 
   },
   statNumber: { 
     fontSize: 22, 
-    fontFamily: theme.fonts.main, // Updated
+    fontFamily: theme.fonts.main,
     color: theme.colors.navy, 
     marginBottom: 5 
   },
   statLabel: { 
     fontSize: 16, 
     color: 'black', 
-    fontFamily: theme.fonts.main // Updated
+    fontFamily: theme.fonts.main
   },
   sectionTitle: {
     fontSize: 20,
     color: 'black',
-    fontFamily: theme.fonts.main, // Updated
+    fontFamily: theme.fonts.main,
     marginBottom: 15,
   },
   overviewGrid: {
@@ -181,7 +211,7 @@ const styles = StyleSheet.create({
   },
   overviewValue: {
     fontSize: 18,
-    fontFamily: theme.fonts.main, // Updated
+    fontFamily: theme.fonts.main,
     marginLeft: 10,
     color: '#4a5568',
   },
@@ -199,7 +229,9 @@ const styles = StyleSheet.create({
     padding: 10,
     justifyContent: 'space-between'
   },
-  closeCard: { alignSelf: 'flex-end' },
+  closeCard: { 
+    alignSelf: 'flex-end' 
+  },
   suggestionAvatar: {
     width: 70,
     height: 70,
@@ -217,7 +249,7 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
   followText: { 
-    fontFamily: theme.fonts.main, // Updated
+    fontFamily: theme.fonts.main,
     color: '#4a5568' 
   },
   logoutBtn: {
@@ -225,10 +257,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#e53e3e',
     borderRadius: 15,
     alignItems: 'center',
-    marginBottom: 50,
+    marginTop: 20,
   },
   logoutText: { 
     color: 'white', 
-    fontFamily: theme.fonts.main // Updated
+    fontFamily: theme.fonts.main
   }
 });

@@ -1,8 +1,8 @@
 import React from 'react';
-import { ScrollView, StyleSheet, View, Text } from 'react-native';
+import { ScrollView, StyleSheet, View, Text, Image } from 'react-native';
 import { LessonNode } from './LessonNode';
 import { UnitCard } from './UnitCard';
-import { Ionicons } from '@expo/vector-icons';
+import { theme } from '../theme/theme'; // Ensure this path is correct
 
 export const LessonPath = ({ lessons, currentLessonIndex, languageName, totalXp }: any) => {
   return (
@@ -10,9 +10,13 @@ export const LessonPath = ({ lessons, currentLessonIndex, languageName, totalXp 
       <UnitCard title={`${languageName} syntax`} />
       
       <View style={styles.pathWrapper}>
+        {/* The Cat & XP Badge */}
         <View style={styles.catPositioner}>
-            <Ionicons name="logo-github" size={80} color="#000" /> 
-            <Text style={styles.xpText}>{totalXp} XP</Text>
+          <Image 
+            source={require('../../assets/cat-avatar.png')} 
+            style={styles.mascotImage} 
+          /> 
+          <Text style={styles.xpText}>{totalXp} XP</Text>
         </View>
 
         {lessons.map((lesson: any, index: number) => {
@@ -23,7 +27,7 @@ export const LessonPath = ({ lessons, currentLessonIndex, languageName, totalXp 
             <View key={lesson.id} style={[styles.row, { marginLeft: offset }]}>
               <LessonNode
                 index={index}
-                offset={0} // Fixed TypeScript error
+                offset={0} 
                 isActive={index === currentLessonIndex}
                 isCompleted={index < currentLessonIndex}
               />
@@ -36,9 +40,36 @@ export const LessonPath = ({ lessons, currentLessonIndex, languageName, totalXp 
 };
 
 const styles = StyleSheet.create({
-  container: { paddingBottom: 120 },
-  pathWrapper: { marginTop: 40, width: '100%', minHeight: 600 },
-  catPositioner: { position: 'absolute', left: 30, top: 120, alignItems: 'center', zIndex: 5 },
-  xpText: { fontFamily: 'Courier', fontSize: 22, fontWeight: 'bold', color: '#333', transform: [{ rotate: '-10deg' }], marginTop: -5 },
-  row: { marginVertical: 20 },
+  container: { 
+    paddingBottom: 120,
+    backgroundColor: '#DDE8F0' // Matching your light blue background
+  },
+  pathWrapper: { 
+    marginTop: 40, 
+    width: '100%', 
+    minHeight: 600 
+  },
+  catPositioner: { 
+    position: 'absolute', 
+    left: 40, // Keeps it on the left side of the path
+    top: 100, 
+    alignItems: 'center', 
+    zIndex: 10 
+  },
+  mascotImage: {
+    width: 85, 
+    height: 85, 
+    resizeMode: 'contain'
+  },
+  xpText: { 
+    fontFamily: 'Courier', // Matches the "hand-drawn" terminal look
+    fontSize: 22, 
+    fontWeight: 'bold', 
+    color: '#333', 
+    transform: [{ rotate: '-10deg' }], 
+    marginTop: -10 
+  },
+  row: { 
+    marginVertical: 25 
+  },
 });
