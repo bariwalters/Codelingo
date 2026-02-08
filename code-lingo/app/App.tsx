@@ -20,6 +20,10 @@ export default function App() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isLoginView, setIsLoginView] = useState(true);
+  
+  type AppScreen = "dashboard" | "lesson";
+  const [screen, setScreen] = useState<AppScreen>("dashboard");
+
 
   let [fontsLoaded] = useFonts({ 'NovaMono': NovaMono_400Regular });
 
@@ -30,6 +34,12 @@ export default function App() {
         const profile = await getUserProfile(firebaseUser.uid);
         setUserProfile(profile);
       }
+      
+      if (!firebaseUser) {
+        setUserProfile(null);
+        setScreen("dashboard");
+      }
+
       setLoading(false);
     });
     return () => unsub();

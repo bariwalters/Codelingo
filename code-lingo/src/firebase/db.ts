@@ -5,12 +5,15 @@ import {
   getDoc,
   setDoc,
   updateDoc,
-  serverTimestamp,
+  //serverTimestamp,
   increment,
   arrayUnion,
 } from "firebase/firestore";
 import type { UserProfile, LanguageId, LanguageProgress } from "./types";
 import { initialWindowMetrics } from "react-native-safe-area-context";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import type { GeneratedQuestion, QuestionType } from "./types";
+
 
 
 // Utilities
@@ -147,6 +150,23 @@ export async function enrollLanguage(uid: string, languageId: LanguageId) {
     };
     await setDoc(progressDoc(uid, languageId), progress, { merge: false });
   }
+}
+
+
+export async function saveGeneratedQuestion(params: {
+  uid: string;
+  lessonAttemptId: string;
+  question: Omit<GeneratedQuestion, "id" | "createdAt">;
+}) {
+  const { uid, lessonAttemptId, question } = params;
+
+  const ref = collection(db, "users", uid, "lessons", lessonAttemptId, "questions");
+  const docRef = await addDoc(ref, {
+    ...question,
+    createdAt: serverTimestamp(),
+  });
+
+  return docRef.id;
 }
 
 

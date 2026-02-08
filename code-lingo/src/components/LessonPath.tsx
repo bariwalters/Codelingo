@@ -5,7 +5,14 @@ import { UnitCard } from './UnitCard';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../theme/theme';
 
-export const LessonPath = ({ lessons, currentLessonIndex }: any) => {
+
+interface LessonPathProps {
+  lessons: { id: string; order: number }[];
+  currentLessonIndex: number;
+  onStartLesson: (idx: number) => void;
+}
+
+export const LessonPath = ({ lessons, currentLessonIndex, onStartLesson }: LessonPathProps) => {
   return (
     <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
       <UnitCard />
@@ -26,11 +33,13 @@ export const LessonPath = ({ lessons, currentLessonIndex }: any) => {
               )}
 
               <LessonNode
+                key={lesson.id}
                 index={index}
                 offset={offset}
-                isActive={isActive}
+                isActive={index === currentLessonIndex}
                 isCompleted={index < currentLessonIndex}
-              />
+                onPress={(i) => onStartLesson(i)}
+/>
             </View>
           );
         })}
