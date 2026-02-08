@@ -1,5 +1,7 @@
 // src/firebase/db.ts
 import { db } from "./firebase";
+export { db };
+
 import {
   doc,
   getDoc,
@@ -13,7 +15,6 @@ import type { UserProfile, LanguageId, LanguageProgress } from "./types";
 import { initialWindowMetrics } from "react-native-safe-area-context";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import type { GeneratedQuestion, QuestionType } from "./types";
-
 
 
 // Utilities
