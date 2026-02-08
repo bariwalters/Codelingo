@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { View, Text, Pressable } from "react-native";
 import type { GeneratedQuestion, QuestionType, LanguageId } from "../src/firebase/types";
 import { generateQuestionGemini } from "../src/ai/gemini";
+import { generateSpeech } from "../src/services/voiceServices";
 
 const norm = (s: string) => s.replace(/\s+/g, "").replace(/[“”]/g, '"').replace(/[‘’]/g, "'").trim();
 
@@ -71,6 +72,19 @@ export default function LessonScreen({
     }
   }
 
+  async function handleSpeak(text: string) {
+    try {
+      console.log("Speaking text:", text);
+      const audioUrl = await generateSpeech(text);
+      const audio = new Audio(audioUrl);
+      await audio.play();
+    } catch (e) {
+      console.error("Voice Error:", e);
+    }
+  }
+
+  // ... keep the rest of your UI the same
+
   useEffect(() => {
     nextQuestion(); // random between two types
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -104,6 +118,12 @@ export default function LessonScreen({
   return (
     <View style={{ flex: 1, padding: 20, justifyContent: "center" }}>
       <Text style={{ fontWeight: "700" }}>Fill in the blank</Text>
+      <Pressable 
+        onPress={() => handleSpeak(question.promptText)} 
+        style={{ backgroundColor: '#e0e7ff', padding: 8, borderRadius: 8, alignSelf: 'flex-start', marginVertical: 10 }}
+      >
+        <Text style={{ color: '#4f46e5', fontWeight: 'bold' }}>🔈 Listen</Text>
+      </Pressable>
       <Text style={{ marginTop: 10 }}>{question.promptText}</Text>
       <Text style={{ marginTop: 10 }}>{question.codeSnippet}</Text>
 
@@ -217,6 +237,12 @@ export default function LessonScreen({
   return (
     <View style={{ flex: 1, padding: 20, justifyContent: "center" }}>
       <Text style={{ fontWeight: "700", fontSize: 18 }}>Arrange the code</Text>
+      <Pressable 
+        onPress={() => handleSpeak(question.promptText)} // New direct version
+        style={{ backgroundColor: '#e0e7ff', padding: 8, borderRadius: 8, alignSelf: 'flex-start', marginBottom: 10 }}
+        >
+        <Text style={{ color: '#4f46e5', fontWeight: 'bold' }}>🔈 Listen</Text>
+      </Pressable>
       <Text style={{ marginTop: 10, color: "#444" }}>{question.promptText}</Text>
 
       {/* ANSWER AREA: Where blocks go when tapped */}
