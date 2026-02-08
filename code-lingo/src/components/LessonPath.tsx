@@ -2,17 +2,13 @@ import React from 'react';
 import { ScrollView, StyleSheet, View, Text, Image } from 'react-native';
 import { LessonNode } from './LessonNode';
 import { UnitCard } from './UnitCard';
-import { theme } from '../theme/theme'; // Ensure this path is correct
+import { theme } from '../theme/theme'; 
 
 interface LessonPathProps {
   lessons: { id: string; order: number }[];
   currentLessonIndex: number;
-
-  // UI bits used in the JSX below
   languageName: string;
   totalXp: number;
-
-  // navigation callback (so tapping a node opens lesson.tsx)
   onStartLesson: (idx: number) => void;
 }
 
@@ -38,7 +34,7 @@ export const LessonPath = ({
         </View>
 
         {lessons.map((lesson, index) => {
-          const zigzag = [100, 140, 100, 60];
+          const zigzag = [40, 80, 40, 10];
           const offset = zigzag[index % 4];
 
           return (
@@ -61,7 +57,7 @@ export const LessonPath = ({
 const styles = StyleSheet.create({
   container: {
     paddingBottom: 120,
-    backgroundColor: '#DDE8F0', // Matching your light blue background
+    backgroundColor: '#DDE8F0', 
   },
   pathWrapper: {
     marginTop: 40,
@@ -70,8 +66,8 @@ const styles = StyleSheet.create({
   },
   catPositioner: {
     position: 'absolute',
-    left: 40, // Keeps it on the left side of the path
-    top: 100,
+    right: 275, 
+    top: 60,
     alignItems: 'center',
     zIndex: 10,
   },
@@ -81,14 +77,16 @@ const styles = StyleSheet.create({
     resizeMode: 'contain',
   },
   xpText: {
-    fontFamily: 'Courier', // Matches the "hand-drawn" terminal look
-    fontSize: 22,
+    fontFamily: theme.fonts.main, // Swapped to use your theme font for consistency
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#333',
     transform: [{ rotate: '-10deg' }],
-    marginTop: -10,
+    marginTop: -5,
   },
   row: {
     marginVertical: 25,
+    // Ensures nodes don't hug the absolute edge if the offset is 0
+    paddingLeft: 20, 
   },
 });
