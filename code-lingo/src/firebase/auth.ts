@@ -8,6 +8,7 @@ import {
 import { createUserProfile } from "./db";
 import type { LanguageId } from "./types";
 
+export { auth };
 
 export async function signUpWithEmail(params: {
   email: string;
