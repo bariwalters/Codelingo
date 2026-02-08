@@ -164,85 +164,178 @@ async function nextQuestion(type: QuestionType) {
   );
 }
 
-  // Arrange (fallback branch)
-  const blocks = question.blocks ?? [];
+  // --- ARRANGE QUESTION UI ---
+  const availableBlocks = (question.blocks ?? []).filter(
+    (block) => !arranged.includes(block)
+  );
   const correct = question.correctOrder ?? [];
 
   return (
     <View style={{ flex: 1, padding: 20, justifyContent: "center" }}>
-      <Text style={{ fontWeight: "700" }}>Arrange blocks</Text>
-      <Text style={{ marginTop: 10 }}>{question.promptText}</Text>
+      <Text style={{ fontWeight: "700", fontSize: 18 }}>Arrange the code</Text>
+      <Text style={{ marginTop: 10, color: "#444" }}>{question.promptText}</Text>
 
-      <Text style={{ marginTop: 16, fontWeight: "600" }}>Tap blocks to build:</Text>
-
-      <View style={{ flexDirection: "row", flexWrap: "wrap", marginTop: 10 }}>
-        {blocks.map((b, idx) => (
+      {/* ANSWER AREA: Where blocks go when tapped */}
+      <View style={{ 
+        marginTop: 20, 
+        minHeight: 60, 
+        padding: 10, 
+        backgroundColor: "#f9fafb", 
+        borderWidth: 2, 
+        borderStyle: "dashed", 
+        borderColor: "#ddd",
+        borderRadius: 12,
+        flexDirection: "row",
+        flexWrap: "wrap"
+      }}>
+        {arranged.length === 0 && <Text style={{ color: "#aaa" }}>Tap blocks below to build your answer...</Text>}
+        {arranged.map((b, idx) => (
           <Pressable
-            key={`${b}-${idx}`}
+            key={`arranged-${idx}`}
+            onPress={() => {
+              // Remove block from arranged and put it back in available
+              setArranged((prev) => prev.filter((_, i) => i !== idx));
+              setArrangeResult(null);
+            }}
+            style={{ 
+              padding: 10, 
+              backgroundColor: "#4f46e5", 
+              borderRadius: 8, 
+              margin: 4 
+            }}
+          >
+            <Text style={{ color: "white", fontWeight: "600" }}>{b}</Text>
+          </Pressable>
+        ))}
+      </View>
+
+      {/* OPTIONS AREA: Available blocks to choose from */}
+      <Text style={{ marginTop: 20, fontWeight: "600" }}>Available Blocks:</Text>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", marginTop: 10 }}>
+        {availableBlocks.map((b, idx) => (
+          <Pressable
+            key={`available-${idx}`}
             onPress={() => {
               setArranged((prev) => [...prev, b]);
               setArrangeResult(null);
             }}
-            style={{ padding: 10, borderWidth: 1, borderRadius: 10, borderColor: "#ccc", margin: 4 }}
+            style={{ 
+              padding: 10, 
+              borderWidth: 1, 
+              borderRadius: 8, 
+              borderColor: "#ccc", 
+              margin: 4,
+              backgroundColor: "white" 
+            }}
           >
             <Text>{b}</Text>
           </Pressable>
         ))}
       </View>
 
-      <Text style={{ marginTop: 14, fontWeight: "600" }}>Your order:</Text>
-      <Text style={{ marginTop: 6 }}>{arranged.join(" ")}</Text>
-
-      <View style={{ flexDirection: "row", marginTop: 14 }}>
+      {/* ACTIONS */}
+      <View style={{ flexDirection: "row", marginTop: 24, gap: 10 }}>
         <Pressable
           onPress={() => {
             setArranged([]);
             setArrangeResult(null);
           }}
-          style={{ padding: 12, borderWidth: 1, borderRadius: 10, borderColor: "#ccc", marginRight: 10 }}
+          style={{ 
+            flex: 1,
+            padding: 14, 
+            borderWidth: 1, 
+            borderRadius: 10, 
+            borderColor: "#ccc", 
+            alignItems: "center"
+          }}
         >
-          <Text>Reset</Text>
+          <Text>Clear All</Text>
         </Pressable>
 
         <Pressable
           onPress={() => {
-            const ok = arranged.length === correct.length && arranged.every((x, i) => x === correct[i]);
+            // 1. Convert both arrays into "Compressed" strings (no spaces at all)
+            // This makes "print (" and "print(" identical to the logic
+            const userCode = arranged.join("").replace(/\s+/g, "");
+            const correctCode = correct.join("").replace(/\s+/g, "");
+
+            // 2. Debug logs - check these in your terminal!
+            console.log("Compressed User:", userCode);
+            console.log("Compressed Correct:", correctCode);
+
+            // 3. Compare the final strings
+            const isCorrect = userCode === correctCode && userCode.length > 0;
+            
+            setArrangeResult(isCorrect ? "correct" : "incorrect");
+          }}
+          style={{ 
+            flex: 2,
+            padding: 14, 
+            borderRadius: 10, 
+            backgroundColor: "#4f46e5", 
+            opacity: arranged.length > 0 ? 1 : 0.5,
+            alignItems: "center"
+          }}
+          disabled={arranged.length === 0}
+        >
+          <Text style={{ color: "white", fontWeight: "700" }}>Check Order</Text>
+        </Pressable>
+
+        {/* <Pressable
+          onPress={() => {
+            // Normalize strings (trim) and compare
+            const ok = 
+              arranged.length === correct.length && 
+              arranged.every((val, i) => val.trim() === correct[i].trim());
+            
             setArrangeResult(ok ? "correct" : "incorrect");
           }}
-          style={{ padding: 12, borderRadius: 10, backgroundColor: "#4f46e5", opacity: arranged.length ? 1 : 0.5 }}
-          disabled={!arranged.length}
+          style={{ 
+            flex: 2,
+            padding: 14, 
+            borderRadius: 10, 
+            backgroundColor: "#4f46e5", 
+            opacity: arranged.length === correct.length ? 1 : 0.5,
+            alignItems: "center"
+          }}
+          disabled={arranged.length !== correct.length}
         >
-          <Text style={{ color: "white", fontWeight: "600" }}>Check</Text>
-        </Pressable>
+          <Text style={{ color: "white", fontWeight: "700" }}>Check Order</Text>
+        </Pressable> */}
       </View>
 
+      {/* FEEDBACK */}
       {arrangeResult && (
-        <Text style={{ marginTop: 14, fontWeight: "700", color: arrangeResult === "correct" ? "green" : "red" }}>
-          {arrangeResult === "correct" ? "✅ Correct!" : "❌ Incorrect"}
-        </Text>
+        <View style={{ 
+          marginTop: 20, 
+          padding: 15, 
+          borderRadius: 10, 
+          backgroundColor: arrangeResult === "correct" ? "#ecfdf5" : "#fef2f2" 
+        }}>
+          <Text style={{ 
+            fontWeight: "700", 
+            color: arrangeResult === "correct" ? "#059669" : "#dc2626" 
+          }}>
+            {arrangeResult === "correct" ? "✅ Perfect Coding!" : "❌ Not quite right"}
+          </Text>
+          {arrangeResult === "incorrect" && (
+            <Text style={{ marginTop: 5, color: "#444" }}>
+              Hint: {question.explanation}
+            </Text>
+          )}
+        </View>
       )}
 
-      {arrangeResult === "incorrect" && (
-        <Text style={{ marginTop: 8 }}>
-          Hint: {question.explanation ?? "Try again!"}
-        </Text>
-      )}
-
+      {/* NAVIGATION */}
       <Pressable
         onPress={() => {
           setQuestion(null);
           setArranged([]);
           setArrangeResult(null);
-          setSelectedChoice(null);
-          setResult(null);
         }}
-        style={{ marginTop: 24 }}
+        style={{ marginTop: 30, alignItems: "center" }}
       >
-        <Text>Back to question picker</Text>
-      </Pressable>
-
-      <Pressable onPress={onExit} style={{ marginTop: 12 }}>
-        <Text style={{ color: "red" }}>Exit Lesson</Text>
+        <Text style={{ color: "#4f46e5", fontWeight: "600" }}>← Try another question</Text>
       </Pressable>
     </View>
   );
