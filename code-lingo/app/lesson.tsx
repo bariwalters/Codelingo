@@ -1,12 +1,15 @@
 import { useState } from "react";
 import { View, Text, Pressable } from "react-native";
+import { useLocalSearchParams } from 'expo-router';
 import type { GeneratedQuestion, QuestionType, LanguageId } from "../src/firebase/types";
 import { generateQuestionGemini } from "../src/ai/gemini";
 
 export default function LessonScreen(props: { onExit: () => void }) {
   const { onExit } = props;
+  const { lessonIndex } = useLocalSearchParams<{ lessonIndex: string }>();
+  const parsedLessonIndex = Number(lessonIndex ?? 0);
 
-  const [lessonIndex] = useState(0);
+
   const [language] = useState<LanguageId>("python");
 
   const [question, setQuestion] = useState<
@@ -33,7 +36,7 @@ async function nextQuestion(type: QuestionType) {
 
     const q = await generateQuestionGemini({
       language,
-      lessonIndex,
+      lessonIndex: parsedLessonIndex,
       questionType: type,
     });
 
