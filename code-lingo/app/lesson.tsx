@@ -32,6 +32,9 @@ export default function LessonScreen({
   const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
   const [result, setResult] = useState<"correct" | "incorrect" | null>(null);
 
+  // --- AUDIO STATE ---
+  const [successSound, setSuccessSound] = useState<Audio.Sound | null>(null);
+
   // --- LOGIC ---
   const nextQuestion = useCallback(async (forcedType?: QuestionType) => {
     if (currentStep >= TOTAL_STEPS) return;
@@ -58,8 +61,18 @@ export default function LessonScreen({
     }
   }, [currentStep, currentLanguage, parsedLessonIndex]);
 
+  // Rename this to playCorrectSound as requested
+  const playCorrectSound = async () => {
+    if (successSound) {
+      try {
+        await successSound.replayAsync();
+      } catch (e) {
+        console.error("Playback error:", e);
+      }
+    }
+  };
+
   const handleContinue = () => {
-    // If we're already loading the next question, ignore extra taps
     if (loadingQuestion) return;
 
     const isCorrect = arrangeResult === "correct" || result === "correct";
@@ -72,7 +85,6 @@ export default function LessonScreen({
         ]);
       } else {
         setCurrentStep(nextStep);
-        // This triggers the background fetch without clearing the current question UI
         nextQuestion();
       }
     } else {
@@ -83,8 +95,27 @@ export default function LessonScreen({
     }
   };
 
+  // Load question and Sound Asset on mount
   useEffect(() => {
     nextQuestion();
+
+    async function loadSound() {
+      try {
+        const { sound } = await Audio.Sound.createAsync(
+          require('../assets/correct.mp3')
+        );
+        setSuccessSound(sound);
+      } catch (e) {
+        console.log("Could not load correct.mp3 - check file path");
+      }
+    }
+    loadSound();
+
+    return () => {
+      if (successSound) {
+        successSound.unloadAsync();
+      }
+    };
   }, []); 
 
   async function handleSpeak(text: string) {
@@ -97,8 +128,6 @@ export default function LessonScreen({
     } catch (e) { console.error("Voice Error:", e); }
   }
 
-  // Changed: Only return the full-screen loader if there is NO question loaded yet.
-  // Once the first question is in state, this block is skipped even during background loads.
   if (!question) {
     return (
       <View style={styles.centered}>
@@ -206,9 +235,11 @@ export default function LessonScreen({
                 const isCorrect = arranged.length === correct.length &&
                   arranged.every((val, i) => norm(val) === norm(correct[i]));
                 setArrangeResult(isCorrect ? "correct" : "incorrect");
+                if (isCorrect) playCorrectSound();
               } else {
                 const isCorrect = selectedChoice === question.blanks?.[0]?.answer;
                 setResult(isCorrect ? "correct" : "incorrect");
+                if (isCorrect) playCorrectSound();
               }
             }}
           >
@@ -229,7 +260,6 @@ export default function LessonScreen({
                 onPress={handleContinue} 
                 style={[styles.nextBtn, (arrangeResult === "incorrect" || result === "incorrect") && { backgroundColor: '#dc2626' }]}
               >
-                {/* Shows a spinner inside the button while loading the next question */}
                 {loadingQuestion ? (
                   <ActivityIndicator color="white" />
                 ) : (
