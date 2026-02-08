@@ -6,7 +6,7 @@ export const theme = {
     skyBlue: '#C8D9E6',
     beige: '#F5EFEB',
     white: '#FFFFFF',
-    // Functional aliases
+
     primary: '#2F4156',
     secondary: '#567C8D',
     background: '#C8D9E6',
@@ -14,7 +14,7 @@ export const theme = {
     textSecondary: '#FFFFFF',
   },
   fonts: {
-    main: 'NovaMono', // Ensure this is loaded in your App.tsx
+    main: 'NovaMono',
   },
   spacing: {
     s: 8,

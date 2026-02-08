@@ -1,21 +1,21 @@
 import React, { useEffect, useState } from "react";
-import { View, ActivityIndicator, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
+import { View, ActivityIndicator } from 'react-native';
 import { useFonts, NovaMono_400Regular } from '@expo-google-fonts/nova-mono';
 import { onAuthStateChanged, User } from "firebase/auth";
 
 import { auth } from "../src/firebase/firebase";
-import { logout } from "../src/firebase/auth";
 import { getUserProfile } from "../src/firebase/db";
 import { UserProfile } from "../src/firebase/types";
 
 import LoginScreen from '../app/login'; 
 import SignUpScreen from '../app/signup'; 
-import LessonScreen from '../app/lesson';
-import { globalStyles } from '../src/theme/globalStyles';
+import MainShell from '../src/MainShell';
 import { theme } from '../src/theme/theme';
+import { globalStyles } from '../src/theme/globalStyles';
+import SplashScreen from '../app/splash';
 
 export default function App() {
+  const [showSplash, setShowSplash] = useState(true);
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -53,37 +53,15 @@ export default function App() {
     );
   }
 
-  // If not logged in, show Login or Signup based on isLoginView state
+  if (showSplash) {
+    return <SplashScreen onFinish={() => setShowSplash(false)} />;
+  }
+
   if (!user) {
-    return isLoginView ? (
-      <LoginScreen onNavigate={() => setIsLoginView(false)} />
-    ) : (
-      <SignUpScreen onNavigate={() => setIsLoginView(true)} />
-    );
+    return isLoginView 
+      ? <LoginScreen onNavigate={() => setIsLoginView(false)} />
+      : <SignUpScreen onNavigate={() => setIsLoginView(true)} />;
   }
 
-  if (screen === "lesson") {
-    return <LessonScreen onExit={() => setScreen("dashboard")} />;
-  }
-
-
-  // Dashboard View (Logged In)
-  return (
-    <View style={[globalStyles.screenContainer, globalStyles.centered]}>
-      <Text style={globalStyles.heading}>hello, {userProfile?.username || 'coder'}!</Text>
-      
-      <TouchableOpacity
-        style={globalStyles.authButton}
-        onPress={() => setScreen("lesson")}
-      >
-        <Text style={globalStyles.buttonText}>start lesson</Text>
-      </TouchableOpacity>
-
-      
-      <TouchableOpacity style={globalStyles.authButton} onPress={() => logout()}>
-        <Text style={globalStyles.buttonText}>log out</Text>
-      </TouchableOpacity>
-      <StatusBar style="auto" />
-    </View>
-  );
+  return <MainShell userProfile={userProfile} />;
 }

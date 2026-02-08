@@ -44,22 +44,27 @@ export default function SignUpScreen({ onNavigate }: { onNavigate: () => void })
           <TextInput style={globalStyles.inputField} value={username} onChangeText={setUsername} />
         </View>
 
-
-
         <View style={globalStyles.inputGroup}>
           <Text style={globalStyles.inputLabel}>starting language</Text>
-
-          <View style={{
-            width: "100%",
-            borderRadius: 10,
-            overflow: "hidden",
-            borderWidth: 2,
-            borderColor: "#2F4156",
-            backgroundColor: "#fff"
-          }}>
+          
+          <View style={[
+            globalStyles.inputField, 
+            { 
+              justifyContent: 'center', 
+              paddingHorizontal: 0,
+              overflow: 'hidden' 
+            }
+          ]}>
             <Picker
               selectedValue={selectedLanguage}
               onValueChange={(v) => setSelectedLanguage(v as LanguageId)}
+              dropdownIconColor="#2F4156"
+              mode="dropdown" // Better for Android "feel"
+              style={{ 
+                width: '100%',
+                color: '#2F4156', 
+                fontFamily: 'NovaMono'
+              }}
             >
               <Picker.Item label="Python" value="python" />
               <Picker.Item label="Java" value="java" />
@@ -69,7 +74,6 @@ export default function SignUpScreen({ onNavigate }: { onNavigate: () => void })
             </Picker>
           </View>
         </View>
-
 
         <View style={globalStyles.inputGroup}>
           <Text style={globalStyles.inputLabel}>password</Text>
