@@ -19,13 +19,15 @@ export const LessonPath = ({
   totalXp,
   onStartLesson,
 }: LessonPathProps) => {
+  
   return (
     <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
       <UnitCard title={`${languageName} syntax`} />
 
       <View style={styles.pathWrapper}>
-        {/* The Cat & XP Badge */}
-        <View style={styles.catPositioner}>
+        
+        {/* STATIC MASCOT: Placed outside the loop so it stays at the top left */}
+        <View style={styles.staticCatContainer}>
           <Image
             source={require('../../assets/cat-avatar.png')}
             style={styles.mascotImage}
@@ -34,18 +36,21 @@ export const LessonPath = ({
         </View>
 
         {lessons.map((lesson, index) => {
-          const zigzag = [40, 80, 40, 10];
+          // Zigzag math
+          const zigzag = [0, 80, 0, -80]; 
           const offset = zigzag[index % 4];
+          const isActive = index === currentLessonIndex;
 
           return (
-            <View key={lesson.id} style={[styles.row, { marginLeft: offset }]}>
-              <LessonNode
-                index={index}
-                offset={offset}
-                isActive={index === currentLessonIndex}
-                isCompleted={index < currentLessonIndex}
-                onPress={(i) => onStartLesson(i)}
-              />
+            <View key={lesson.id} style={styles.row}>
+              <View style={{ transform: [{ translateX: offset }], alignItems: 'center' }}>
+                <LessonNode
+                  index={index}
+                  isActive={isActive}
+                  isCompleted={index < currentLessonIndex}
+                  onPress={(i) => onStartLesson(i)}
+                />
+              </View>
             </View>
           );
         })}
@@ -56,37 +61,39 @@ export const LessonPath = ({
 
 const styles = StyleSheet.create({
   container: {
-    paddingBottom: 120,
+    paddingBottom: 150,
     backgroundColor: '#DDE8F0', 
   },
   pathWrapper: {
     marginTop: 40,
     width: '100%',
-    minHeight: 600,
+    alignItems: 'center',
+    position: 'relative', // Allows absolute positioning for the cat
   },
-  catPositioner: {
+  staticCatContainer: {
     position: 'absolute',
-    right: 275, 
-    top: 60,
+    left: 40,      // Adjusted to sit to the left of the path
+    top: 100,      // Positioned near the second node area
     alignItems: 'center',
     zIndex: 10,
   },
   mascotImage: {
-    width: 85,
-    height: 85,
+    width: 90,
+    height: 90,
     resizeMode: 'contain',
   },
   xpText: {
-    fontFamily: theme.fonts.main, // Swapped to use your theme font for consistency
+    fontFamily: theme.fonts.main,
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
-    transform: [{ rotate: '-10deg' }],
+    color: '#2D3E50',
     marginTop: -5,
+    transform: [{ rotate: '-10deg' }], // Matches the slanted look in your image
   },
   row: {
-    marginVertical: 25,
-    // Ensures nodes don't hug the absolute edge if the offset is 0
-    paddingLeft: 20, 
+    marginVertical: 15,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

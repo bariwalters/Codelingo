@@ -2,43 +2,39 @@ import React from 'react';
 import { TouchableOpacity, StyleSheet, View, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../theme/theme';
-import { useRouter } from 'expo-router';
-
 
 interface LessonNodeProps {
-  offset: number;
+  index: number;
   isActive?: boolean;
   isCompleted?: boolean;
-  index: number; // Added index for numbering
   onPress?: (index: number) => void;
-
 }
 
-export const LessonNode = ({ offset, isActive, isCompleted, index, onPress }: LessonNodeProps) => {
-  const router = useRouter();
+export const LessonNode = ({ isActive, isCompleted, index, onPress }: LessonNodeProps) => {
+  const colors = {
+    active: { top: theme.colors.teal, shadow: '#78909C' }, // Dark teal shadow
+    completed: { top: theme.colors.navy, shadow: '#1E293B' },
+    locked: { top: '#A9BCC9', shadow: '#78909C' } 
+  };
+
+  const currentState = isActive ? 'active' : isCompleted ? 'completed' : 'locked';
+  const { top, shadow } = colors[currentState];
 
   return (
-    <View style={[styles.nodeContainer, { transform: [{ translateX: offset }] }]}>
-      {/* Dashed Ring now centered behind the circle */}
+    <View style={styles.nodeContainer}>
       {isActive && <View style={styles.dashedRing} />}
       
+      {/* 3D Shadow Base */}
+      <View style={[styles.shadowLayer, { backgroundColor: shadow }]} />
+      
+      {/* Top Button Surface */}
       <TouchableOpacity
-
         onPress={() => onPress?.(index)}
-
-        style={[
-          styles.nodeCircle,
-          {
-            backgroundColor: isActive
-              ? theme.colors.teal
-              : isCompleted
-                ? theme.colors.navy
-                : '#8BA1B0'
-          }
-        ]}
+        activeOpacity={0.9}
+        style={[styles.nodeCircle, { backgroundColor: top }]}
       >
         {isActive ? (
-          <Ionicons name="play" size={40} color={theme.colors.white} />
+          <Ionicons name="play" size={35} color="white" style={{ marginLeft: 4 }} />
         ) : (
           <Text style={styles.nodeNumber}>{index + 1}</Text>
         )}
@@ -51,33 +47,40 @@ const styles = StyleSheet.create({
   nodeContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: 15,
+    width: 100,
+    height: 100,
   },
   nodeCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 85,
+    height: 76, 
+    borderRadius: 45,
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 2,
-    // The 3D button shadow effect
-    borderBottomWidth: 6,
-    borderBottomColor: 'rgba(0,0,0,0.2)',
+    marginTop: -10, // Pulls the face up to reveal the shadow
+  },
+  shadowLayer: {
+    position: 'absolute',
+    width: 85,
+    height: 80,
+    borderRadius: 45,
+    bottom: 12,
+    zIndex: 1,
   },
   nodeNumber: {
     fontFamily: theme.fonts.main,
-    fontSize: 24,
-    color: theme.colors.white,
+    fontSize: 26,
+    color: 'white',
     fontWeight: 'bold',
   },
   dashedRing: {
     position: 'absolute',
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    borderWidth: 2,
+    width: 115,
+    height: 115,
+    borderRadius: 60,
+    borderWidth: 3,
     borderColor: theme.colors.teal,
     borderStyle: 'dashed',
-    zIndex: 1,
+    zIndex: 0,
   }
 });
