@@ -22,12 +22,13 @@ export const LessonNode = ({ isActive, isCompleted, index, onPress }: LessonNode
 
   return (
     <View style={styles.nodeContainer}>
+      {/* 1. Dashed Ring (Back Layer) */}
       {isActive && <View style={styles.dashedRing} />}
       
-      {/* 3D Shadow Base */}
+      {/* 2. 3D Shadow Base (Middle Layer) */}
       <View style={[styles.shadowLayer, { backgroundColor: shadow }]} />
       
-      {/* Top Button Surface */}
+      {/* 3. Top Button Surface (Top Layer) */}
       <TouchableOpacity
         onPress={() => onPress?.(index)}
         activeOpacity={0.9}
@@ -47,25 +48,39 @@ const styles = StyleSheet.create({
   nodeContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    width: 100,
-    height: 100,
+    width: 120, // Provides enough padding for the 110px ring
+    height: 120,
+  },
+  dashedRing: {
+    position: 'absolute',
+    width: 110,
+    height: 110,
+    borderRadius: 55,
+    borderWidth: 3,
+    borderColor: theme.colors.teal,
+    borderStyle: 'dashed',
+    // Positioned to encompass the 3D stack perfectly
+    top: 3, 
+  },
+  shadowLayer: {
+    position: 'absolute',
+    width: 85,
+    height: 76,
+    borderRadius: 45,
+    // Sitting slightly lower to create depth
+    top: 22, 
+    zIndex: 1,
   },
   nodeCircle: {
+    position: 'absolute',
     width: 85,
     height: 76, 
     borderRadius: 45,
     justifyContent: 'center',
     alignItems: 'center',
+    // Lifted up 8px from the shadow base
+    top: 14, 
     zIndex: 2,
-    marginTop: -10, // Pulls the face up to reveal the shadow
-  },
-  shadowLayer: {
-    position: 'absolute',
-    width: 85,
-    height: 80,
-    borderRadius: 45,
-    bottom: 12,
-    zIndex: 1,
   },
   nodeNumber: {
     fontFamily: theme.fonts.main,
@@ -73,14 +88,4 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
   },
-  dashedRing: {
-    position: 'absolute',
-    width: 115,
-    height: 115,
-    borderRadius: 60,
-    borderWidth: 3,
-    borderColor: theme.colors.teal,
-    borderStyle: 'dashed',
-    zIndex: 0,
-  }
 });
