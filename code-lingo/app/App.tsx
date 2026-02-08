@@ -11,6 +11,7 @@ import { UserProfile } from "../src/firebase/types";
 
 import LoginScreen from '../app/login'; 
 import SignUpScreen from '../app/signup'; 
+import LessonScreen from '../app/lesson';
 import { globalStyles } from '../src/theme/globalStyles';
 import { theme } from '../src/theme/theme';
 
@@ -19,6 +20,10 @@ export default function App() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isLoginView, setIsLoginView] = useState(true);
+  
+  type AppScreen = "dashboard" | "lesson";
+  const [screen, setScreen] = useState<AppScreen>("dashboard");
+
 
   let [fontsLoaded] = useFonts({ 'NovaMono': NovaMono_400Regular });
 
@@ -29,6 +34,12 @@ export default function App() {
         const profile = await getUserProfile(firebaseUser.uid);
         setUserProfile(profile);
       }
+      
+      if (!firebaseUser) {
+        setUserProfile(null);
+        setScreen("dashboard");
+      }
+
       setLoading(false);
     });
     return () => unsub();
@@ -51,10 +62,24 @@ export default function App() {
     );
   }
 
+  if (screen === "lesson") {
+    return <LessonScreen onExit={() => setScreen("dashboard")} />;
+  }
+
+
   // Dashboard View (Logged In)
   return (
     <View style={[globalStyles.screenContainer, globalStyles.centered]}>
       <Text style={globalStyles.heading}>hello, {userProfile?.username || 'coder'}!</Text>
+      
+      <TouchableOpacity
+        style={globalStyles.authButton}
+        onPress={() => setScreen("lesson")}
+      >
+        <Text style={globalStyles.buttonText}>start lesson</Text>
+      </TouchableOpacity>
+
+      
       <TouchableOpacity style={globalStyles.authButton} onPress={() => logout()}>
         <Text style={globalStyles.buttonText}>log out</Text>
       </TouchableOpacity>
