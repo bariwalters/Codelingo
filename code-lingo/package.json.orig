@@ -12,8 +12,11 @@
     "@expo-google-fonts/nova-mono": "^0.4.1",
     "@expo/metro-runtime": "~6.1.2",
     "@expo/vector-icons": "^15.0.3",
+<<<<<<< HEAD
+=======
     "@google/genai": "^1.40.0",
     "@google/generative-ai": "^0.24.1",
+>>>>>>> aaa0103ff48c69dd7eb91d8f9cbda6b14f6ea5e9
     "@lottiefiles/dotlottie-react": "^0.13.5",
     "@react-native-picker/picker": "^2.11.4",
     "expo": "~54.0.33",

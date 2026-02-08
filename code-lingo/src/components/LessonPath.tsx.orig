@@ -2,13 +2,26 @@ import React from 'react';
 import { ScrollView, StyleSheet, View, Text, Image } from 'react-native';
 import { LessonNode } from './LessonNode';
 import { UnitCard } from './UnitCard';
+import { theme } from '../theme/theme'; // Ensure this path is correct
 
-export const LessonPath = ({ lessons, currentLessonIndex, languageName, totalXp, onStartLesson }: any) => {
+<<<<<<< HEAD
+export const LessonPath = ({ lessons, currentLessonIndex, languageName, totalXp }: any) => {
+=======
+
+interface LessonPathProps {
+  lessons: { id: string; order: number }[];
+  currentLessonIndex: number;
+  onStartLesson: (idx: number) => void;
+}
+
+export const LessonPath = ({ lessons, currentLessonIndex, onStartLesson }: LessonPathProps) => {
+>>>>>>> aaa0103ff48c69dd7eb91d8f9cbda6b14f6ea5e9
   return (
     <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
       <UnitCard title={`${languageName} syntax`} />
       
       <View style={styles.pathWrapper}>
+        {/* The Cat & XP Badge */}
         <View style={styles.catPositioner}>
           <Image 
             source={require('../../assets/cat-avatar.png')} 
@@ -22,14 +35,19 @@ export const LessonPath = ({ lessons, currentLessonIndex, languageName, totalXp,
           const offset = zigzag[index % 4];
           
           return (
-            <View key={lesson.id || index} style={[styles.row, { marginLeft: offset }]}>
+            <View key={lesson.id} style={[styles.row, { marginLeft: offset }]}>
               <LessonNode
+                key={lesson.id}
                 index={index}
+<<<<<<< HEAD
                 offset={0} 
+=======
+                offset={offset}
+>>>>>>> aaa0103ff48c69dd7eb91d8f9cbda6b14f6ea5e9
                 isActive={index === currentLessonIndex}
                 isCompleted={index < currentLessonIndex}
-                onPress={() => onStartLesson?.(index)}
-              />
+                onPress={(i) => onStartLesson(i)}
+/>
             </View>
           );
         })}
@@ -41,7 +59,7 @@ export const LessonPath = ({ lessons, currentLessonIndex, languageName, totalXp,
 const styles = StyleSheet.create({
   container: { 
     paddingBottom: 120,
-    backgroundColor: '#DDE8F0' 
+    backgroundColor: '#DDE8F0' // Matching your light blue background
   },
   pathWrapper: { 
     marginTop: 40, 
@@ -50,7 +68,7 @@ const styles = StyleSheet.create({
   },
   catPositioner: { 
     position: 'absolute', 
-    left: 40, 
+    left: 40, // Keeps it on the left side of the path
     top: 100, 
     alignItems: 'center', 
     zIndex: 10 
@@ -61,7 +79,7 @@ const styles = StyleSheet.create({
     resizeMode: 'contain'
   },
   xpText: { 
-    fontFamily: 'Courier', 
+    fontFamily: 'Courier', // Matches the "hand-drawn" terminal look
     fontSize: 22, 
     fontWeight: 'bold', 
     color: '#333', 

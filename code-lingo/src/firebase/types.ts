@@ -39,3 +39,32 @@ export type LanguageProgress = {
   updatedAt: any;
 };
 
+export type QuestionType = "fill_blank" | "arrange";
+
+export type GeneratedQuestion = {
+  id: string; // Firestore doc id
+  language: LanguageId;
+  lessonIndex: number;
+  difficulty: number;
+
+  questionType: QuestionType; // ✅ the “key” used by frontend
+
+  promptText: string; // what will be shown AND later read by ElevenLabs
+
+  // Fill-in-the-blank fields
+  codeSnippet?: string; // e.g. "print(___)"
+  blanks?: {
+    token: string;        // e.g. "___"
+    choices: string[];    // options
+    answer: string;       // correct choice
+  }[];
+
+  // Arrange fields
+  blocks?: string[];       // draggable tokens
+  correctOrder?: string[]; // correct ordering
+
+  explanation?: string;
+  createdAt?: any;
+};
+
+
